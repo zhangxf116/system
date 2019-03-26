@@ -1,0 +1,172 @@
+<div class="lxgs-wechat">
+	<!-- 标题头 -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<div class="lxgs-main-search">
+		<!-- 搜索 -->
+		<el-form ref="weChatForm" :model='weChatData' :inline='true'>
+			<el-form-item prop='wx_account'>
+				<el-input  v-model="weChatData.wx_account" placeholder="请输入微信号"></el-input>
+			</el-form-item>
+
+			<el-form-item prop='agent_id'>
+				<el-select v-model="weChatData.agent_id" filterable placeholder="小职姐">
+					<el-option
+							v-for="(i, index) in agentList"
+							:key="index"
+							:label="i.nickname"
+							:value="i.agentId">
+					</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('weChatForm')" v-track="{type: 'btn', metric: 'click', id: 'wechat:search'}">查询</el-button>
+				<el-button @click="reset('weChatForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<!-- 添加微信号 -->
+		<div class="add-wechat">
+			<el-button type="primary" icon="el-icon-plus" @click='isShowAdd = true' v-track="{type: 'btn', metric: 'click', id: 'wechat:add'}">添加微信号</el-button>
+		</div>
+
+		<el-table
+			v-loading.body='loading'
+			:data='wechat.items'
+		    stripe height="580"
+		    :virtual-scrollbar='true'>
+
+			<el-table-column label='序号' align='center' width="65" type="index">
+	            	<template slot-scope="scope">
+						{{(wechat.pageNo - 1) * wechat.pageSize + (scope.$index + 1)}}
+					</template>
+	        </el-table-column>
+
+			<el-table-column prop='wxAccount' label="微信号" width="160"></el-table-column>
+
+	        <el-table-column prop='agentNickname' label="小职姐" width="110"></el-table-column>
+
+	        <el-table-column prop='agentJobNo' label="工号" width="110"></el-table-column>
+
+	        <el-table-column prop='totalContactCount' label="联系人总数" width="110"></el-table-column>
+
+			<el-table-column label="上传日期" width='110'>
+				<template slot-scope='scope'>{{scope.row.lastUploadTime | dateFormat02}}</template>
+			</el-table-column>
+
+			<el-table-column label="默认微信号" width="120">
+				<template slot-scope='scope'>{{scope.row.defaultAccount ? '是' : '否'}}</template>
+			</el-table-column>
+
+			<el-table-column label="微信二维码" width="120">
+				<template slot-scope='scope'>
+					<el-button v-if='scope.row.wxQrCodeUrl' type="primary" icon="el-icon-view" @click="viewQrCode(scope.row.wxQrCodeUrl)">查看</el-button>
+				</template>
+			</el-table-column>
+
+
+	       	<el-table-column label="操作">
+            	<template slot-scope="scope">
+					<el-button type="danger" size='mini' @click='deletWechat(scope.row)' v-track="{type: 'btn', metric: 'click', id: 'wechat:delete'}">删除</el-button>
+	           		<el-button type="primary" size='mini' @click='showEditWechat(scope.row)' v-track="{type: 'btn', metric: 'click', id: 'wechat:edit'}">编辑</el-button>
+	            </template>
+	        </el-table-column>
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'weChatData', 'page_size', 'getWeChatList')"
+		  		@current-change="handlePageChange($event, 'weChatData', 'page_no', 'getWeChatList')"
+		  		:current-page='wechat.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='wechat.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='wechat.totalCount'></el-pagination>
+		</div>
+	</div>
+
+	<!-- 弹出框：添加微信号 -->
+	<el-dialog
+		title="添加微信号"
+		:visible.sync="isShowAdd"
+		:show-close="false"
+		@close="close('addWeChatForm')"
+		width="35%">
+		<el-form ref="addWeChatForm" :model="addWeChatData" :inline-message='true' :rules='addWeChatDataRules' label-width='120px'>
+			<el-form-item prop='wxAccount' label="微信号：">
+				<el-input  v-model="addWeChatData.wxAccount" placeholder="请输入微信号" class="dialog-input"></el-input>
+			</el-form-item>
+
+			<el-form-item prop='agentId' label="小职姐：">
+				<el-select v-model="addWeChatData.agentId" filterable placeholder="请输入小职姐" class="dialog-input">
+					<el-option
+							v-for="(i, index) in agentList"
+							:key="index"
+							:label="i.nickname"
+							:value="i.agentId">
+					</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item label="默认微信号：">
+				<el-checkbox v-model="addWeChatData.defaultAccount">默认微信号</el-checkbox>
+			</el-form-item>
+		</el-form>
+
+		<span slot="footer" class="dialog-footer">
+			<el-button @click="isShowAdd = false">取 消</el-button>
+			<el-button type="primary" @click="addWechat('addWeChatForm')">确 定</el-button>
+		</span>
+	</el-dialog>
+
+	<!-- 弹出框：编辑微信 -->
+	<el-dialog
+		title="编辑微信"
+		:visible.sync="isShowEdit"
+		:show-close="false"
+		width="35%">
+		<el-form ref="editWeChatForm" :model="editWeChatData" :rules='editWeChatDataRules' label-width='120px'>
+			<el-form-item prop='wx_account' label="微信号：">
+				<el-input v-model="editWeChatData.wx_account" placeholder="请输入微信号" disabled class="dialog-input"></el-input>
+			</el-form-item>
+
+			<el-form-item prop='agentId' label="小职姐：">
+				<el-select v-model="editWeChatData.agentId" filterable placeholder="请输入小职姐" class="dialog-input">
+					<el-option
+							v-for="(i, index) in agentList"
+							:key="index"
+							:label="i.nickname"
+							:value="i.agentId">
+					</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item label="默认微信号：">
+				<el-checkbox v-model="editWeChatData.defaultAccount">默认微信号</el-checkbox>
+			</el-form-item>
+
+			<el-form-item label="微信二维码：">
+				<ul class="lxgs-upload-wrapper clearfix">
+					<li v-if='editWeChatData.wxQrCodeUrl'><div class="image"><img :src="editWeChatData.wxQrCodeUrl"></div></li>
+					<li class="lxgs-upload" v-if='!editWeChatData.wxQrCodeUrl'>
+						<i class="el-icon-plus"></i>
+						<input type="file" accept="image/*" name='wxQrCode' @change='uploadPic'>
+					</li>
+					<li v-if='editWeChatData.wxQrCodeUrl' @click='removeQr'>
+						<img src="../../static/css/image/icon-delete.png" class="delete">
+					</li>
+				</ul>
+			</el-form-item>
+		</el-form>
+
+		<span slot="footer" class="dialog-footer">
+			<el-button @click="isShowEdit = false">取 消</el-button>
+			<el-button type="primary" @click="editWechat('editWeChatForm')">确 定</el-button>
+		</span>
+	</el-dialog>
+</div>

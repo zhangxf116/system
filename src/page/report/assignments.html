@@ -1,0 +1,45 @@
+<div class="lxgs-report-assignments">
+	<!-- 标题头 -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list" style="margin-top: -1px;">
+		<el-table
+			v-loading.body='loading'
+			:data='assignments.items'
+		    stripe height="650"
+		    :virtual-scrollbar='true'>
+
+	       	<el-table-column prop='agentNickname' label="小职姐" align='center'></el-table-column>
+
+	       	<el-table-column prop='supervisorNickname' label="主管" width="100"></el-table-column>
+
+	        <el-table-column prop='todayAssignmentCount' label="今日分配用户数" width="140"></el-table-column>
+
+	        <el-table-column prop='todayWeChatIncrementCount' label="今日系统微信添加数" width="150"></el-table-column>
+
+	        <el-table-column prop='todayUploadedWXFriendCount' label="今日APP上传微信数" width="150"></el-table-column>
+
+	        <el-table-column prop='totalAssignmentCount' label="总分配用户数" width="140"></el-table-column>
+
+	        <el-table-column prop='firstMatchCount' label="首次分配人数" width="110"></el-table-column>
+
+	       	<el-table-column prop='secondMatchCount' label="二次分配人数" width="110"></el-table-column>
+
+	        <el-table-column prop='totalWeChatIncrementCount' label="系统微信总添加数" width="140"></el-table-column>
+	        
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'assignmentsAgentData', 'page_size', 'getAssignmentsAgentList')"
+		  		@current-change="handlePageChange($event, 'assignmentsAgentData', 'page_no', 'getAssignmentsAgentList')"
+		  		:current-page='assignments.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='assignments.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='assignments.totalCount'></el-pagination>
+		</div>
+	</div>
+</div>

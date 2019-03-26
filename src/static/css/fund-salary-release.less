@@ -1,0 +1,34 @@
+.lxgs-fund-salary-release {
+	.action {
+		padding-right: 15px;
+		margin-right: 15px;
+		border-right: 1px solid @border-color;
+		color: @green;
+	}
+
+	.time-filter {
+		position: absolute;
+		right: 15px;
+		top: 10px;
+	}
+
+	.customer-info {
+		margin: 10px 0;
+		padding: 0;
+		list-style: none;
+		font-size: 16px;
+		font-weight: bold;
+
+		li {
+			margin: 5px 35px 5px 0;
+			float: left;
+
+			.tags:after {
+				content: ', ';
+			}
+			.tags:last-child:after {
+				content: '';
+			}
+		}
+	}
+}

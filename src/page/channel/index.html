@@ -1,0 +1,151 @@
+<div class="lxgs-call-seat">
+    <!-- 标题头 -->
+    <h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+    <div class="lxgs-main-search">
+        <!-- 搜索 -->
+        <el-form ref="callSeatForm" :model='params' :inline='true'>
+            <el-form-item prop='source'>
+                <el-input v-model='params.source' placeholder="请输入渠道"></el-input>
+            </el-form-item>
+
+            <el-form-item prop='name'>
+                <el-input v-model='params.name' placeholder="请输入渠道对应的文案"></el-input>
+            </el-form-item>
+
+            <el-form-item prop='keyword'>
+                <el-input v-model='params.keyword' placeholder="请输入关键词"></el-input>
+            </el-form-item>
+
+            <el-form-item>
+                <el-button type="primary" @click="search('callSeatForm')" v-track="{type: 'btn', metric: 'click', id: 'channel:search'}">查询</el-button>
+                <el-button @click="reset('callSeatForm')">重置</el-button>
+                <el-button type="primary" @click='cityConfig' v-track="{type: 'btn', metric: 'click', id: 'channel:city-config'}">城市配置</el-button>
+                <el-button type="warning" @click="importShowPop" v-track="{type: 'btn', metric: 'click', id: 'channel:import'}">导入</el-button>
+            </el-form-item>
+        </el-form>
+    </div>
+
+    <!-- 数据列表 -->
+    <div class="lxgs-main-list">
+        <el-table v-loading.body='loading' :data='seat.items' stripe height="580" :virtual-scrollbar='true'>
+
+            <el-table-column label='序号' align='center' width="65">
+                <template slot-scope="scope"> {{(scope.$index + 1) + (seat.pageNo -1) * seat.pageSize}} </template>
+            </el-table-column>
+
+            <el-table-column prop='source' label="渠道" width="130"></el-table-column>
+
+            <el-table-column prop='name' label="对应文案" width="150"></el-table-column>
+
+            <el-table-column prop='keyword' label="关键词" width="110"></el-table-column>
+
+            <el-table-column prop='updateTime' label="更新时间" width="180">
+                <template slot-scope="scope">{{scope.row.updateTime | dateFormat01}}</template>
+            </el-table-column>
+
+            <el-table-column label="操作">
+                <template slot-scope="scope">
+                    <el-button type="primary" size='mini' @click='showEditSeat(scope.row)' v-track="{type: 'btn', metric: 'click', id: 'channel:edit'}">编辑</el-button>
+                    <el-button type="danger" size='mini' @click='deletSeat(scope.row)' v-track="{type: 'btn', metric: 'click', id: 'channel:delete'}">删除</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+
+        <!-- 分页 -->
+        <div class='lxgs-main-pagination'>
+            <el-pagination
+                    @size-change="handlePageChange($event, 'params', 'page_size', 'getList')"
+                    @current-change="handlePageChange($event, 'params', 'page_no', 'getList')"
+                    :current-page='seat.pageNo'
+                    :page-sizes="pageSizes"
+                    :page-size='seat.pageSize'
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total='seat.totalCount'></el-pagination>
+        </div>
+    </div>
+
+    <!-- 弹出框：编辑 -->
+    <el-dialog title="编辑" :visible.sync="isShowEditSeat" :show-close="false"  width="30%">
+        <el-form ref="editSeatForm" :model="editSeatData" :rules='editSeatDataRules' label-width='100px'>
+            <el-form-item prop='source' label="渠道：">
+                <el-input v-model='editSeatData.source' placeholder="请输入渠道" disabled></el-input>
+            </el-form-item>
+            <el-form-item prop='name' label="对应文案：">
+                <el-input v-model='editSeatData.name' placeholder="请输入文案"></el-input>
+            </el-form-item>
+            <el-form-item prop='keyword' label="关键词：">
+                <el-input v-model='editSeatData.keyword' placeholder="请输入关键词"></el-input>
+            </el-form-item>
+        </el-form>
+
+        <span slot="footer" class="dialog-footer">
+			<el-button @click="isShowEditSeat = false">取 消</el-button>
+			<el-button type="primary" @click="editSeat('editSeatForm')">确 定</el-button>
+		</span>
+    </el-dialog>
+
+    <!-- 弹出框：城市配置 -->
+    <el-dialog title="城市配置" :visible.sync="isShowCity" :show-close="false"  width="45%" style="margin-top: 20vh;">
+        <el-table v-loading.body='loading' :data='areaList' stripe :virtual-scrollbar='true'>
+            <el-table-column label='序号' align='center' width="65" type="index"></el-table-column>
+            <el-table-column prop='area' label="区域" width="130"></el-table-column>
+            <el-table-column prop='name' label="城市" width="150"></el-table-column>
+            <el-table-column label="操作">
+                <template slot-scope="scope">
+                    <el-button type="danger" size='mini' @click='deletArea(scope.row)' v-track="{type: 'btn', metric: 'click', id: 'channel:city-config:delete'}">删除</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+
+        <span slot="footer" class="dialog-footer">
+            <el-button type="primary" icon="el-icon-plus" @click="addCityConfig" v-track="{type: 'btn', metric: 'click', id: 'channel:city-config:add'}"></el-button>
+			<el-button @click="isShowCity = false">取 消</el-button>
+		</span>
+    </el-dialog>
+
+    <!--增加城市-->
+    <el-dialog title="增加城市配置" :visible.sync="isShowAddCity" :show-close="false"  width="30%">
+        <el-form ref="addCityForm" :model="addCityForm" :rules='addDataRules' label-width='80px'>
+            <el-form-item prop='area' label="区域：">
+                <el-input v-model='addCityForm.area'></el-input>
+            </el-form-item>
+            <el-form-item prop='name' label="城市：">
+                <el-input v-model='addCityForm.name'></el-input>
+            </el-form-item>
+        </el-form>
+
+        <span slot="footer" class="dialog-footer">
+			<el-button @click="isShowAddCity = false">取 消</el-button>
+			<el-button type="primary" @click="addCity('addCityForm')">确 定</el-button>
+		</span>
+    </el-dialog>
+
+    <!--导入-->
+    <el-dialog title="导入渠道对应表" :visible.sync="isShowImport" :show-close="false"  width="30%">
+        <el-form ref="fileForm" :model="fileForm" :rules='fileRules' label-width='80px'>
+            <el-form-item label="上传Excel文件：" label-width="140px" prop="file">
+                <el-upload
+                        ref="upload"
+                        action="/api/source-configure/sources"
+                        :headers="headers"
+                        :on-success="handleExcelSuccess"
+                        :on-remove="handleRemove"
+                        :file-list="uploadFileDataExcel"
+                        :limit="1"
+                        :on-exceed="handleExceed"
+                        :before-upload="beforeAvatarUpload"
+                        :auto-upload="false">
+                    <el-button slot="trigger" size="small" type="primary" :loading="uploading">点击上传</el-button>
+                    <div slot="tip" class="el-upload__tip">单个Excel不超过2M</div>
+                </el-upload>
+            </el-form-item>
+            <a href="http://xzjpub.oss-cn-hzfinance.aliyuncs.com/source.xlsx" style="padding-left: 20px;">模板下载</a>
+        </el-form>
+
+        <span slot="footer" class="dialog-footer">
+			<el-button @click="isShowImport = false">取 消</el-button>
+			<el-button type="primary" @click="importFlieSure('fileForm')">确 定</el-button>
+		</span>
+    </el-dialog>
+</div>

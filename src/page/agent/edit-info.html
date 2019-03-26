@@ -1,0 +1,61 @@
+<div class="lxgs-info-edit">
+	<!-- 标题头 | 资料修改 -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+	
+	<div class="lxgs-main-content">
+		<div class="edit">
+			<el-form label-width="105px"  ref="editProfile" :model="infoData" :rules="infoDataRules" >
+				<el-form-item label='用户名：'>{{info.agentId}}</el-form-item>
+
+				<el-form-item label='昵称：' prop='nick'>
+					<el-input type='text' placeholder='请输入昵称' maxlength='6' v-model.trim='infoData.nick'></el-input>
+				</el-form-item>
+
+				<el-form-item label='姓名：' prop='name'>
+					<el-input type='text' placeholder='请输入姓名' maxlength='6' v-model.trim='infoData.name'></el-input>
+				</el-form-item>
+
+				<el-form-item label='性别：' prop='sex'>
+					<el-radio-group v-model.number="infoData.sex">
+						<el-radio :label="0">男</el-radio>
+						<el-radio :label="1">女</el-radio>
+					</el-radio-group>
+				</el-form-item>
+
+				<el-form-item label='家乡：'>{{info.jiguan}}</el-form-item>
+
+				<el-form-item label='身份证号：' prop='cardNo'>
+					<el-input type='text' placeholder="身份证号" @blur="updateIdInfo" v-model.trim="infoData.cardNo"></el-input>
+				</el-form-item>
+
+				<el-form-item label='年龄：'>{{info.age}}</el-form-item>
+
+				<el-form-item label='生日：' prop='birthday'>
+					<el-date-picker v-model="infoData.birthday" @blur="updateIdInfo" type="date" :editable="false" value-format="timestamp" placeholder="选择生日" style="width: 100%;"></el-date-picker>
+				</el-form-item>
+
+				<el-form-item label='星座：'>{{info.constellation}}</el-form-item>
+
+				<el-form-item label='联系电话：' prop='phone'>
+					<el-input type='text' placeholder="联系电话" maxlength="11" v-model.trim="infoData.phone"></el-input>
+				</el-form-item>
+
+				<el-form-item label='微信号：'>{{info.wechat}}</el-form-item>
+
+				<el-form-item label='头像：'>
+					<ul class="lxgs-upload-wrapper clearfix">
+						<li v-for="i in infoData.headImages" :class="i.selected ? 'selected' : ''" @click="selectImage(i.selected, i.url, 'head')"><div class="image"><img :src="i.url"></div></li>
+						<li class="lxgs-upload">
+							<i class="el-icon-plus"></i>
+							<input type="file" accept="image/*" name='head' @change='uploadPic'>
+						</li>
+					</ul>
+				</el-form-item>
+
+				<el-form-item>
+					<el-button type="primary" :loading="loading" @click="editInfo('editProfile')" v-track="{type: 'btn', metric: 'click', id: 'agent-info-edit:submit'}">确认</el-button>
+				</el-form-item>
+			</el-form>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,131 @@
+<div class="lxgs-report-agent-summary">
+	<!-- 标题头 -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<div class="lxgs-main-search">
+		<!-- 搜索 -->
+		<el-form ref="conversionForm" :model="conversionData" :inline='true'>
+			<el-form-item prop='month'>
+				<el-date-picker v-model="conversionData.month" type="month" value-format="timestamp" placeholder="选择月"></el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop="agent_name">
+				<el-input v-model="conversionData.agent_name" placeholder="小职姐姓名"></el-input>
+			</el-form-item>
+
+			<el-form-item prop='agent_id' v-if="!hasRole('AGENT_MEMBER')">
+				<el-select v-model="conversionData.agent_id" filterable placeholder="小职姐昵称">
+					<el-option
+							v-for="(i, index) in agentList"
+							:key="index"
+							:label="i.nickname"
+							:value="i.agentId">
+					</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='supervisor_id' v-if="!hasRole('AGENT_MEMBER')">
+				<el-select v-model="conversionData.supervisor_id" filterable placeholder="主管">
+					<el-option
+							v-for="(i, index) in supervisorList"
+							:key="index"
+							:label="i.nickname"
+							:value="i.agentId">
+					</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('conversionForm')" v-track="{type: 'btn', metric: 'click', id: 'conversion:search'}">查询</el-button>
+				<el-button @click="reset('conversionForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<el-table v-loading.body='loading' :data='conversion.items' stripe height="580" :virtual-scrollbar='true' @sort-change="sortMethod">
+
+			<el-table-column label='序号' align='center' width="55">
+				<template slot-scope="scope"> {{(scope.$index + 1) + (conversion.pageNo -1) * conversion.pageSize}} </template>
+			</el-table-column>
+
+			<el-table-column prop='month' label="月" align='center' width="95"></el-table-column>
+
+			<el-table-column prop='managerNickname' align='center' label="经理" width="100"></el-table-column>
+
+			<el-table-column prop='supervisorNickname' align='center' label="主管" width="100"></el-table-column>
+
+			<el-table-column prop='agentNickname' align='center' label="小职姐昵称"></el-table-column>
+
+			<el-table-column prop='agentName' align='center' label="小职姐姓名"></el-table-column>
+
+			<el-table-column prop='monthlySignInCount' align='center' label="本月累计签到人数" width="100" sortable="custom"></el-table-column>
+
+			<el-table-column prop='currentWXFriendsIndicator' align='center' label="当前微信好友指标" width="100" sortable="custom"></el-table-column>
+
+			<el-table-column prop='currentWXFriends' align='center' label="当前微信数" width="120" sortable="custom"></el-table-column>
+
+			<el-table-column label="本月签到目标" align='center'>
+				<el-table-column prop="monthlySignInLevel1" align='center' label="0.1%">
+					<template slot-scope="scope">
+						<div v-if="scope.row.monthlySignInCount > scope.row.monthlySignInLevel1" class="show-red">
+							<span class='target-color'>{{scope.row.monthlySignInLevel1}}</span>
+							<span class="target-img"></span>
+						</div>
+						<div v-else>{{scope.row.monthlySignInLevel1}}</div>
+					</template>
+				</el-table-column>
+				<el-table-column prop="monthlySignInLevel2" align='center' label="0.15%">
+					<template slot-scope="scope">
+						<div v-if="scope.row.monthlySignInCount > scope.row.monthlySignInLevel2" class="show-red">
+							<span class='target-color'>{{scope.row.monthlySignInLevel2}}</span>
+							<span class="target-img"></span>
+						</div>
+						<div v-else>{{scope.row.monthlySignInLevel2}}</div>
+					</template>
+				</el-table-column>
+				<el-table-column prop="monthlySignInLevel3" align='center' label="0.17%">
+					<template slot-scope="scope">
+						<div v-if="scope.row.monthlySignInCount > scope.row.monthlySignInLevel3" class="show-red">
+							<span class='target-color'>{{scope.row.monthlySignInLevel3}}</span>
+							<span class="target-img"></span>
+						</div>
+						<div v-else>{{scope.row.monthlySignInLevel3}}</div>
+					</template>
+				</el-table-column>
+				<el-table-column prop="monthlySignInLevel4" align='center' label="0.2%">
+					<template slot-scope="scope">
+						<div v-if="scope.row.monthlySignInCount > scope.row.monthlySignInLevel4" class="show-red">
+							<span class='target-color'>{{scope.row.monthlySignInLevel4}}</span>
+							<span class="target-img"></span>
+						</div>
+						<div v-else>{{scope.row.monthlySignInLevel4}}</div>
+					</template>
+				</el-table-column>
+				<el-table-column prop="monthlySignInLevel5" align='center' label="0.3%">
+					<template slot-scope="scope">
+						<div v-if="scope.row.monthlySignInCount > scope.row.monthlySignInLevel5" class="show-red">
+							<span class='target-color'>{{scope.row.monthlySignInLevel5}}</span>
+							<span class="target-img"></span>
+						</div>
+						<div v-else>{{scope.row.monthlySignInLevel5}}</div>
+					</template>
+				</el-table-column>
+			</el-table-column>
+
+		</el-table>
+
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+					@size-change="handlePageChange($event, 'conversionData', 'page_size', 'getconversionList')"
+					@current-change="handlePageChange($event, 'conversionData', 'page_no', 'getconversionList')"
+					:current-page='conversion.pageNo'
+					:page-sizes="pageSizes"
+					:page-size='conversion.pageSize'
+					layout="total, sizes, prev, pager, next, jumper"
+					:total='conversion.totalCount'></el-pagination>
+		</div>
+	</div>
+</div>

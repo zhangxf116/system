@@ -1,0 +1,38 @@
+<div class='lxgs-login'>
+	<div class='login-wrapper'>
+		<span class="logo">小职姐用户服务系统</span>
+		<div class="account">
+			<!-- 切换登陆方式 -->
+			<div class="login-switch" :class="isQrLogin ? 'pc ' : 'qrcode'" @click="loginSwitch"></div>
+
+			<!-- 二维码登陆 -->
+			<div class="login-way" v-if="isQrLogin">
+				<p class="title">手机扫码  安全登录</p>
+
+				<div class="qr-wrap">
+					<qrcode :value="qrcodeId" :options="{ size: 160, level: 'H' }"></qrcode>
+
+					<div class="qr-refresh" v-if="time === 0" @click="qrRefresh">点击重试</div>
+				</div>
+			</div>
+
+			<!-- 密码登陆 -->
+			<div class="login-way" v-else>
+				<p class="title">经理和小职姐助理请使用账号密码登录</p>
+				<el-form ref="login" :model="loginData" :rules="loginDataRules">
+					<el-form-item prop='username'>
+						<el-input type='text' v-model="loginData.username" class='user' placeholder="用户名"></el-input>
+					</el-form-item>
+
+					<el-form-item prop='password'>
+						<el-input type='password' v-model="loginData.password" class='password' placeholder='密   码' @keyup.enter.native="submit('login')"></el-input>
+					</el-form-item>
+					
+					<el-form-item>
+						<el-button :loading="loading" type="primary" class="submit" @click='submit("login")' v-track="{type: 'btn', metric: 'click', id: 'login:password'}">登录</el-button>
+					</el-form-item>
+				</el-form>
+			</div>
+		</div>
+	</div>
+</div>

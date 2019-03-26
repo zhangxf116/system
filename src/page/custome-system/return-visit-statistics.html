@@ -1,0 +1,42 @@
+<div class="lxgs-custome-system">
+    <h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+    <div class="lxgs-main-search">
+        <el-form ref="visitForm" :model='visitData' :inline='true'>
+            <el-form-item prop='timeRange'>
+                <el-date-picker v-model="visitData.timeRange" value-format="timestamp" type="daterange" :default-time="['00:00:00', '23:59:59']" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" @change="getTime('visitData', 'timeRange', 'startDate', 'endDate')"></el-date-picker>
+            </el-form-item>
+
+            <el-form-item label="助理：">
+                <el-input placeholder="请输入助理" v-model="visitData.userName"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="search('visitForm')" v-track="{type: 'btn', metric: 'click', id: 'service-statistics:search'}">查询</el-button>
+                <el-button @click="reset('visitForm')">重置</el-button>
+            </el-form-item>
+        </el-form>
+    </div>
+
+    <div class="lxgs-main-list">
+        <el-table :data="visitList.items" v-loading.body='loading' :virtual-scrollbar='true'>
+            <el-table-column type="index" label="序号" width="90" align='center'></el-table-column>
+            <el-table-column prop="userName" label="助理" width="120"></el-table-column>
+            <el-table-column prop="dialCnt" label="拨打量"></el-table-column>
+            <el-table-column prop="connectCnt" label="接通量"></el-table-column>
+            <el-table-column prop="acnt" label="A级"></el-table-column>
+            <el-table-column prop="bcnt" label="B级"></el-table-column>
+            <el-table-column prop="ccnt" label="C级"></el-table-column>
+        </el-table>
+
+        <div class='lxgs-main-pagination'>
+            <el-pagination
+                @size-change="handlePageChange($event, 'visitData', 'page_size', 'getList')"
+                @current-change="handlePageChange($event, 'visitData', 'page_no', 'getList')"
+                :current-page='visitList.pageNo'
+                :page-sizes="pageSizes"
+                :page-size='visitList.pageSize'
+                layout="total, sizes, prev, pager, next, jumper"
+                :total='visitList.totalCount'></el-pagination>
+        </div>
+    </div>
+</div>

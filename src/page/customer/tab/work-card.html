@@ -1,0 +1,68 @@
+<div class="lxgs-tab-content">
+    <el-table
+            v-loading.body='loading'
+            element-loading-background="rgba(0, 0, 0, 0.6)"
+            :data='workCard.items'
+            stripe
+            :virtual-scrollbar='true'>
+
+        <el-table-column
+                label='序号'
+                align='center'
+                width="65">
+            <template slot-scope="scope">
+                {{(scope.$index + 1) + (workCard.pageNo-1) * workCard.pageSize}}
+            </template>
+        </el-table-column>
+
+        <el-table-column
+                label="上传日期"
+                width="150">
+            <template slot-scope="scope">
+                {{scope.row.uploadDate | dateFormat01}}
+            </template>
+        </el-table-column>
+
+        <el-table-column
+                prop='positionName'
+                label="入职岗位名称"
+                width="240"></el-table-column>
+
+        <el-table-column
+                prop="workCardUrl"
+                label="工牌"
+                width="150">
+            <template slot-scope="scope">
+                <img :src="scope.row.workCardUrl" alt="" style="width: 100px; height: 50px;" @click="imgShow(scope.row.workCardUrl)"/>
+            </template>
+        </el-table-column>
+
+        <el-table-column
+                label="审核状态"
+                width='120'
+                prop="auditStatus">
+            <template slot-scope="scope">
+                {{scope.row.auditStatus  | workCardMap}}
+            </template>
+        </el-table-column>
+
+        <el-table-column
+                label="原因"
+                prop="reason"></el-table-column>
+    </el-table>
+
+    <div class='lxgs-main-pagination'>
+        <el-pagination
+                @size-change="handlePageChange($event, 'workCardData', 'page_size', 'getList')"
+                @current-change="handlePageChange($event, 'workCardData', 'page_no', 'getList')"
+                :current-page='workCard.pageNo'
+                :page-sizes="pageSizes"
+                :page-size='workCard.pageSize'
+                layout="total, sizes, prev, pager, next, jumper"
+                :total='workCard.totalCount'></el-pagination>
+    </div>
+
+    <el-dialog title="工牌展示" :visible.sync="dialogVisible" width="40%">
+        <img :src="imgUrl" alt="" style="width: 100%; height:400px;"/>
+    </el-dialog>
+</div>

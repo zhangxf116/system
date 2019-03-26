@@ -1,0 +1,90 @@
+<div>
+	<!-- 标题头  -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<div class="lxgs-main-search">
+		<!-- 搜索 -->
+		<el-form ref="paramsDataForm" :model="paramsData" :inline='true'>
+			<el-form-item prop='timeRange'>
+				<el-date-picker v-model="paramsData.timeRange" type="daterange" value-format="timestamp" :default-time="['00:00:00', '23:59:59']" range-separator="-" start-placeholder="开始时间" end-placeholder="结束时间" @change="getTime('paramsData', 'timeRange', 'from', 'to')"></el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop='agent_id' v-if="!hasRole('AGENT_MEMBER')">
+				<el-select v-model="paramsData.agent_id" filterable placeholder="小职姐">
+					<el-option
+						v-for="(i, index) in agentList"
+						:key="index"
+						:label="i.nickname"
+						:value="i.agentId">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('paramsDataForm')" v-track="{type: 'btn', metric: 'click', id: 'work-track:search'}">查询</el-button>
+				<el-button @click="reset('paramsDataForm')">重置</el-button>
+				<el-button  type="primary" size='medium' @click="getExport" v-track="{type: 'btn', metric: 'click', id: 'work-track:export'}" :loading="loadingImort">导出</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<el-table v-loading.body='loading' :data='workTrack.items' stripe height="550" :virtual-scrollbar='true'>
+	        <el-table-column label="时间" width="100">
+	            <template slot-scope="scope">
+	                {{scope.row.day | dateFormat02}}
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="小职姐" width="100">
+            	<template slot-scope="scope">
+            		{{scope.row.agentNickname}}
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column prop='supervisorNickname' label="主管" width="100"></el-table-column>
+
+	        <el-table-column label="资源分配数" prop='assignmentCount' width="100"></el-table-column>
+
+	        <el-table-column label="资源完成数" prop='completeCount' width="100"></el-table-column>
+
+	        <el-table-column label="资源通话数" prop='dialCount' width="100"></el-table-column>
+
+	        <el-table-column label="分配任务数" prop='taskAssignmentCount' width="100"></el-table-column>  
+
+	        <el-table-column label="任务完成数" prop='taskCompletionCount' width="100"></el-table-column>
+
+	        <el-table-column label="通话次数" prop='connectCount' width="100"></el-table-column>
+
+	        <el-table-column label="通话人数" prop='connectCustomers' width="100"></el-table-column>
+
+	        <el-table-column label="注记次数" prop='commentCount' width="100"></el-table-column>
+
+	        <el-table-column label="注记人数" prop='commentCustomers' width="100"></el-table-column>
+
+	        <el-table-column label="新增微信数" prop='newWXCount' width="100"></el-table-column>
+
+	        <el-table-column label="APP上传微信数" prop='uploadWXCount' width="120"></el-table-column>
+
+	        <el-table-column label="签到人数" prop='signInCount' width="100"></el-table-column>
+
+	        <el-table-column label="当日创建预约" prop='reserveCount' width="110"></el-table-column>
+
+	        <el-table-column label="次日预约人数" prop='nextDayReservationCount' min-width="110"></el-table-column>
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'paramsData', 'page_size', 'getList')"
+		  		@current-change="handlePageChange($event, 'paramsData', 'page_no', 'getList')"
+		  		:current-page='workTrack.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='workTrack.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='workTrack.totalCount'></el-pagination>
+		</div>
+	</div>
+
+</div>

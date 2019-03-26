@@ -1,0 +1,104 @@
+<div class="lxgs-agent-single-assign">
+	<!-- 标题头 -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<!-- 添加小职姐每天可分配客户数 -->
+	<div class="add">
+		<el-button  type="primary" size='medium' @click="openAdd" v-track="{type: 'btn', metric: 'click', id: 'single-agent-assign:add'}">添加小职姐</el-button>
+	</div>
+
+	<div class="lxgs-main-search">
+		<!-- 搜索 -->
+		<el-form ref="searchForm" :model="params" :inline='true'>
+
+			<el-form-item prop='agent_id'>
+				<el-select v-model="params.agent_id" filterable placeholder="小职姐">
+					<el-option
+							v-for="(i, index) in agentList"
+							:key="index"
+							:label="i.nickname"
+							:value="i.agentId">
+					</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('searchForm')" v-track="{type: 'btn', metric: 'click', id: 'single-agent-assign:search'}">查询</el-button>
+				<el-button @click="reset('searchForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<el-table v-loading.body='loading' :data='singleAssignCount.items' stripe :virtual-scrollbar='true'>
+			<el-table-column label='序号' align='center' width="65">
+            	<template slot-scope="scope">
+					{{(scope.$index + 1) + (singleAssignCount.pageNo -1) * singleAssignCount.pageSize}}
+				</template>
+            </el-table-column>
+
+			<el-table-column label="小职姐" width="140" prop="agentName"></el-table-column>
+
+			<el-table-column label="小职姐昵称" width="220" prop="nickname"></el-table-column>
+
+			<el-table-column prop='supervisorNickname' label="主管" width="100"></el-table-column>
+
+			<el-table-column label="每日分配数上限" width="150" prop="dailyAssignable"></el-table-column>
+
+			<el-table-column label="最新修改时间" width="160">
+				<template slot-scope="scope">
+					{{scope.row.updateTime  | dateFormat01}}
+				</template>
+			</el-table-column>
+
+			<el-table-column label="操作人" width="150" prop="operatorName"></el-table-column>
+
+			<el-table-column label='操作'>
+				<template slot-scope="scope">
+					<el-button  type="primary" plain size='medium' @click="editShow(scope.row.agentId, scope.row.dailyAssignable, scope.row.nickname)" v-track="{type: 'btn', metric: 'click', id: 'single-agent-assign:edit'}">编辑</el-button>
+				</template>
+			</el-table-column>
+
+		</el-table>
+
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'params', 'page_size', 'getList')"
+				@current-change="handlePageChange($event, 'params', 'page_no', 'getList')"
+				:current-page='singleAssignCount.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='singleAssignCount.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='singleAssignCount.totalCount'></el-pagination>
+		</div>
+	</div>
+
+	<!-- 弹出框：添加小职姐每天可分配客户 -->
+	<el-dialog title="添加小职姐每天可分配客户上限" :visible.sync="isShowAdd" width="65%" @close='colseAdd("addForm")'>
+
+		<el-form label-position='right' label-width="140px" ref="addForm" :model="addParams" :rules='addParamsRules' @submit.native.prevent>
+			<el-form-item prop='dailyAssignable' label="每天可分配人数：">
+				<el-input v-model.number="addParams.dailyAssignable" placeholder="请输入每天可分配人数" maxlength="4" onkeyup="value=value.replace(/[^\d]/g,'')" style="width: 180px;"></el-input>
+			</el-form-item>
+
+			<el-form-item prop='searchKey'>
+				<el-input v-model.trim="addParams.searchKey" placeholder="请输入小职姐昵称过滤" prefix-icon="el-icon-search" clearable @change='searchEngine' style="width: 180px;"></el-input>
+				<em class="lxgs-blue" style="font-size: 12px;">支持拼音搜索，回车确认，<i class="el-icon-error"></i>清除</em>
+			</el-form-item>
+
+			<el-form-item prop='agentIds' label="选择小职姐：">
+				<el-checkbox-group v-model="addParams.agentIds">
+					<el-checkbox v-for='(i, index) in searchEngineList' :key="index" :label="i.agentId" size="mini">{{i.nickname}}</el-checkbox>
+				</el-checkbox-group>
+				<span v-if="searchEngineList.length === 0">无过滤结果..</span>
+			</el-form-item>
+		</el-form>
+
+		<span slot="footer" class="dialog-footer">
+			<el-button @click="isShowAdd = false">取 消</el-button>
+			<el-button type="primary" @click="add('addForm')" v-track="{type: 'btn', metric: 'click', id: 'single-agent-assign:add:submit'}">确 定</el-button>
+		</span>
+	</el-dialog>
+</div>

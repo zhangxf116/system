@@ -1,0 +1,159 @@
+.lxgs-customer-detail {
+	position: relative;
+
+	.action {
+		position: absolute;
+		right: 15px;
+		top: 6px;
+	}
+
+	.members {
+		position: absolute;
+		right: 0px;
+		top: 0px;
+		padding: 13px 15px;
+		background-color: #ecedef;
+		color: @red;
+		text-align: center;
+		margin-right: 70px;
+		.title {
+			font-size: 16px;
+			font-weight: bold;
+		}
+		.rank {
+			display: block;
+		}
+	}
+
+	.user-rank {
+		position: absolute;
+		right: 0px;
+		top: 0px;
+		padding: 8px 15px;
+		background-color: #ecedef;
+		color: @red;
+		text-align: center;
+
+		.rank {
+			display: block;
+			font-size: 24px;
+		}
+	}
+
+	.customer-info,
+	.regist-info,
+	.remark-info,
+	.latest-note {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+
+		li {
+			float: left;
+			margin-right: 15px;
+
+			.tags:after {
+				content: ', ';
+			}
+			.tags:last-child:after {
+				content: '';
+			}
+		}
+	}
+
+	.customer-info {
+		line-height: 36px;
+		font-size: 16px;
+		font-weight: bold;
+		width: 80%;
+	}
+
+	.regist-info,
+	.remark-info {
+		line-height: 24px;
+		font-size: 12px;
+		color: #989898;
+	}
+
+	.latest-note {
+		margin: 5px 0 0;
+		padding-top: 10px;
+		border-top: 1px solid #d9dadc;
+	}
+
+	.user-remark-popup {
+		h3 {
+			margin: 0;
+			padding: 10px 15px;
+			font-size: 16px;
+		}
+		.qq {
+			-webkit-appearance: none;
+		    background-color: #fff;
+		    background-image: none;
+		    border-radius: 0px;
+		    border: 1px solid #dcdfe6;
+		    -webkit-box-sizing: border-box;
+		    box-sizing: border-box;
+		    color: #606266;
+		    display: inline-block;
+		    font-size: inherit;
+		    height: 30px;
+		    line-height: 30px;
+		    outline: none;
+		    padding: 0 15px;
+		    -webkit-transition: border-color 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+		    transition: border-color 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+		    width: 163px;
+		}
+		.qq::-webkit-input-placeholder {
+			color: #c0c4cc;
+			font-size: 12px;
+		}
+		.popup-action {
+			text-align: right;
+		}
+	}
+
+	.note-list-title {
+		position: relative;
+		margin: 0;
+		border-bottom: 1px solid @border-color;
+		padding: 10px 15px;
+		background-color: @white;
+
+		.history-record {
+			position: absolute;
+			right: 15px;
+			top: 5px;
+		}
+	}
+
+	.record-pop {
+		.el-radio {
+			width: 180px;
+			margin-left: 0;
+		}
+	}
+
+	.next-task {
+		position: fixed;
+		width: 52px;
+		height: 52px;
+		padding: 12px 4px;
+		border-radius: 52px;
+		right: 60px;
+		text-align: center;
+		font-size: 12px;
+		background-color: @white;
+    	box-sizing: border-box;
+    	box-shadow:0px 0px 12px 1px @next-btn-color;
+		z-index: 10;
+		cursor: pointer;
+		color: @green;
+	}
+	.el-radio {
+		margin-right: 10px;
+		margin-left: 0!important;
+	}
+}

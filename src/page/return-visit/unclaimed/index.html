@@ -1,0 +1,81 @@
+<div class="lxgs-main-search">
+    <el-form ref="pagingData" :model='pagingData' :inline='true'>
+
+        <el-form-item prop='user_name'>
+            <el-input placeholder="请输入客户姓名" v-model="pagingData.user_name"></el-input>
+        </el-form-item>
+        <el-form-item prop='user_cellphone'>
+            <el-input placeholder="请输入客户手机号" v-model="pagingData.user_cellphone"></el-input>
+        </el-form-item>
+
+        <el-form-item prop='from'>
+            <el-date-picker v-model="pagingData.from" type="datetime" :editable="false" value-format="timestamp" placeholder="开始时间"></el-date-picker>
+        </el-form-item>
+
+        <el-form-item prop='to'>
+            <el-date-picker v-model="pagingData.to" type="datetime" :editable="false" value-format="timestamp" placeholder="结束时间"></el-date-picker>
+        </el-form-item>
+
+        <el-form-item>
+            <el-button type="primary" @click="search('pagingData')">查询</el-button>
+            <el-button @click="reset('pagingData')">重置</el-button>
+        </el-form-item>
+    </el-form>
+
+    <div>
+        <el-table
+                :data="unclaime.items"
+                v-loading.body='loading'
+                style="width: 100%">
+            <el-table-column
+                    type="index"
+                    label="序号"
+                    width="90">
+            </el-table-column>
+            <el-table-column
+                    prop="name"
+                    label="手机号"
+                    width="120">
+                <template slot-scope="scope">
+                    <span>{{scope.row.phone}}</span>
+                </template>
+            </el-table-column>
+            <el-table-column
+                    prop="userName"
+                    label="客户姓名">
+            </el-table-column>
+            <el-table-column
+                    label="性别">
+                <template slot-scope="scope">
+                    <span type="primary">{{scope.row.sex | customerSexMap}}</span>
+                </template>
+            </el-table-column>
+            <el-table-column
+                    label="注册时间">
+                <template slot-scope="scope">
+                    <span type="primary">{{scope.row.registerTime | dateFormat01}}</span>
+                </template>
+            </el-table-column>
+            <el-table-column
+                    prop="channel"
+                    label="渠道">
+            </el-table-column>
+            <el-table-column
+                    label="操作">
+                <template slot-scope="scope">
+                    <el-button type="primary" :disabled="disabled" size="small" @click="handleunclaimed(scope.row)" v-track="{type: 'btn', metric: 'click', id: 'return-visit:unclaim:claim'}">认领</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <div class='lxgs-main-pagination'>
+            <el-pagination
+                    @size-change="handlePageChange($event, 'pagingData', 'page_size', 'unclaimedNotice')"
+                    @current-change="handlePageChange($event, 'pagingData', 'page_no', 'unclaimedNotice')"
+                    :current-page='unclaime.pageNo'
+                    :page-sizes="pageSizes"
+                    :page-size='unclaime.pageSize'
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total='unclaime.totalCount'></el-pagination>
+        </div>
+    </div>
+</div>

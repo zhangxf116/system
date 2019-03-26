@@ -1,0 +1,101 @@
+<div class="lxgs-tab-content">
+	<!-- 岗位预约记录列表 -->
+	<el-table
+		v-loading.body='loading'
+		element-loading-background="rgba(0, 0, 0, 0.6)"
+		:data='reserveRecord.items'
+	    stripe
+	    :virtual-scrollbar='true'>
+
+		<el-table-column label='序号' align='center' width="65">
+            <template slot-scope="scope">
+            	<div :class="scope.row.configuredReturnFee === false ? 'no-return-fee' : ''">{{(scope.$index + 1) + (reserveRecord.pageNo -1) * reserveRecord.pageSize}}</div>
+			</template>
+        </el-table-column>
+
+        <el-table-column
+			prop='positionName'
+			width='240'
+			label="岗位名称"></el-table-column>
+
+		<el-table-column
+			label="预约签到时间"
+			width="140">
+				<template slot-scope="scope">
+	                {{scope.row.reserveDate | dateFormat01}}
+	            </template>
+			</el-table-column>
+
+		<el-table-column label="签到地点" prop="signInLocation"></el-table-column>
+
+		<el-table-column label="预约人" width="80">
+			<template slot-scope="scope">{{scope.row.operatorType | reservePersonMap}}</template>
+		</el-table-column>
+
+		<el-table-column label="预约状态" width="80">
+			<template slot-scope="scope">{{scope.row.status | reserveStatusMap}}</template>
+		</el-table-column>
+
+		<el-table-column label="支付状态" width="100">
+			<template slot-scope="scope">
+				<el-popover placement="left" title="支付明细" width="200" trigger="hover">
+    				<!-- 缩写展示按钮 -->
+        			<span slot="reference">{{scope.row.paymentStatus | paymentStatusMap}}</span>
+        			<!-- 展开内容 -->
+    				<p>
+    					<span>支付金额</span>
+    					<span>{{scope.row.paymentAmount}}</span>
+    				</p>
+    				<p>
+    					<span>支付时间</span>
+    					<span>{{scope.row.paymentDate | dateFormat01}}</span>
+    				</p>
+    				<p>
+    					<span>支付方式</span>
+    					<span>{{scope.row.paymentType | paymentTypeMap}}</span>
+    				</p>
+        		</el-popover>
+			</template>
+		</el-table-column>
+
+		<el-table-column label="退款状态" width="100">
+			<template slot-scope="scope">
+				<el-popover placement="left" title="支付明细" width="200" trigger="hover">
+    				<!-- 缩写展示按钮 -->
+        			<span slot="reference">{{scope.row.refundStatus | refundStatusMap}}</span>
+        			<!-- 展开内容 -->
+    				<p>
+    					<span>支付金额</span>
+    					<span>{{scope.row.refundAmount}}</span>
+    				</p>
+    				<p>
+    					<span>支付时间</span>
+    					<span>{{scope.row.refundDate | dateFormat01}}</span>
+    				</p>
+    				<p>
+    					<span>支付方式</span>
+    					<span>{{scope.row.refundType | paymentTypeMap}}</span>
+    				</p>
+        		</el-popover>
+			</template>
+		</el-table-column>
+
+		<el-table-column label="操作" width="80" v-if="hasRole('AGENT_MEMBER')">
+			<template slot-scope="scope">
+                <el-button v-if='scope.row.status == 2' type="text" size="medium" @click="cancelReserve(scope.row.reserveId)" v-track="{type: 'btn', metric: 'click', id: 'customer-detail:position-reserve:cancel-reserve'}">取消预约</el-button>
+            </template>
+		</el-table-column>
+	</el-table>
+
+	<!-- 岗位预约记录列表分页 -->
+	<div class='lxgs-main-pagination'>
+		<el-pagination
+			@size-change="handlePageChange($event, 'positionReserveData', 'page_size', 'getPositionReserveList')"
+		  	@current-change="handlePageChange($event, 'positionReserveData', 'page_no', 'getPositionReserveList')"
+	  		:current-page='reserveRecord.pageNo'
+			:page-sizes="pageSizes"
+			:page-size='reserveRecord.pageSize'
+			layout="total, sizes, prev, pager, next, jumper"
+			:total='reserveRecord.totalCount'></el-pagination>
+	</div>
+</div>

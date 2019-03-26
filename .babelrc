@@ -1,0 +1,9 @@
+{
+  	"presets": ["env"],
+  	"plugins": ["transform-runtime", "babel-plugin-transform-object-rest-spread",["component", [{
+				"libraryName": "element-ui",
+				"styleLibraryName": "~src/static/theme"
+			}]
+    	]
+    ]
+}

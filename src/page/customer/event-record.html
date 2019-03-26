@@ -1,0 +1,227 @@
+<div class="lxgs-customer-event-record">
+
+	<!-- 标题头 -->
+	<h2 class="lxgs-main-title">基本信息</h2>
+
+	<!-- 代注册 -->
+	<div class="action">
+		<el-button  type="primary" size='medium' @click='registPop = true' v-track="{type: 'btn', metric: 'click', id: 'service-event:regist'}">代注册</el-button>
+	</div>
+
+	<!-- 基本信息 -->
+	<div class="lxgs-main-content">
+		<el-row>
+			<el-col :span='8' class="line-right">
+				<div>
+					<span class="key">客户姓名：</span> <em class="value">{{info.userName | nameMap}} ({{info.sex | customerSexMap}})</em>
+				</div>
+
+				<div>
+					<span class="key">客户编号：</span> <em class="value">{{info.userId}}</em>
+				</div>
+
+				<div>
+					<span class="key">注册手机：</span> <em class="value">{{info.phone | phoneMap}}</em>
+				</div>
+
+				<div>
+					<span class="key">邀请人：</span> <em class="value">{{info.referrer}}</em>
+				</div>
+
+				<div>
+					<span class="key">户籍：</span> <em class="value">{{info.jiguan}}</em>
+				</div>
+
+				<div>
+					<span class="key">位置：</span> <em class="value">{{info.location}}</em>
+				</div>
+			</el-col>
+			<el-col :span='8'>
+				<div>
+					<span class="key">是否实名：</span> <em class="value">{{info.idCardVerified ? '是' : '否'}}</em>
+				</div>
+
+				<div>
+					<span class="key">注册渠道：</span> <em class="value">{{info.sourceName}} ({{info.source}})</em>
+				</div>
+
+				<div>
+					<span class="key">注册时间：</span> <em class="value">{{info.registerTime | dateFormat01}}</em>
+				</div>
+			</el-col>
+			<el-col :span='8' class="line-left">
+				<div>
+					<span class="key">经纪人：</span> <em class="value">{{info.agentNickname}}</em>
+				</div>
+
+				<div>
+					<span class="key">服务时间：</span> <em class="value" v-if="info.serviceTime">{{info.serviceTime | dateFormat01}} - 至今</em>
+				</div>
+
+				<div>
+					<span class="key">更换数：</span> <em class="value">{{info.changeAgentTimes}}</em>
+				</div>
+
+				<div>
+					<span class="key">报名数：</span> <em class="value">{{info.applyQuantity}}</em>
+				</div>
+
+				<div>
+					<span class="key">签到数：</span> <em class="value">{{info.signInQuantity}}</em>
+				</div>
+
+				<div>
+					<span class="key">入职数：</span> <em class="value">{{info.onboardingQuantity}}</em>
+				</div>
+			</el-col>
+		</el-row>
+	</div>
+
+	<!-- 标题头 -->
+	<h2 class="lxgs-main-title" style="margin-top: 15px;">新建事件</h2>
+	<div class="lxgs-main-content">
+		<span class="time">接听时间：{{$route.query.recepTime | dateFormat01}}</span>
+		<span class="phone">来电号码：{{$route.query.phone | phoneMap}}</span>
+	</div>
+	<div class="lxgs-main-content">
+		<el-form :model="createParams" ref="createParamsForm" :inline='true' label-width="85px">
+			<el-row>
+				<el-col :span='24'>
+					<el-form-item label="来电事由:" prop='eventType' :rules="[{ required: true, message: '请选择来电事由', trigger: 'blur' }]">
+						<el-select v-model='createParams.eventType' placeholder='请选择来电事由' @change='changeProblemType'>
+							<el-option value="咨询"></el-option>
+							<el-option value="投诉"></el-option>
+							<el-option value="反馈"></el-option>
+						</el-select>
+					</el-form-item>
+					<el-form-item label="主要问题:" prop='problemType' :rules="[{ required: true, message: '请选择主要问题', trigger: 'blur' }]">
+						<el-select v-model='createParams.problemType' placeholder='请选择主要问题'>
+							<!-- 咨询 -->
+							<template v-if='createParams.eventType == "咨询"'>
+								<el-option value="APP使用"></el-option>
+								<el-option value="企业、岗位信息咨询"></el-option>
+								<el-option value="求职、面试流程咨询"></el-option>
+								<el-option value="周薪薪相关问题"></el-option>
+								<el-option value="入职奖励相关问题"></el-option>
+								<el-option value="推荐（好友）问题"></el-option>
+								<el-option value="（任务）红包问题"></el-option>
+								<el-option value="余额提现相关问题"></el-option>
+								<el-option value="身份认证相关问题"></el-option>
+								<el-option value="服务中心相关问题"></el-option>
+								<el-option value="其它问题"></el-option>
+							</template>
+
+							<!-- 投诉 -->
+							<template v-if='createParams.eventType == "投诉"'>
+								<el-option value="经纪人"></el-option>
+								<el-option value="服务中心文员"></el-option>
+								<el-option value="司机"></el-option>
+								<el-option value="劳务公司"></el-option>
+								<el-option value="虚假信息"></el-option>
+								<el-option value="冒牌山寨"></el-option>
+								<el-option value="其它问题"></el-option>
+							</template>
+
+							<!-- 反馈 -->
+							<template v-if='createParams.eventType == "反馈"'>
+								<el-option value="安装注册"></el-option>
+								<el-option value="闪退黑屏"></el-option>
+								<el-option value="其它问题"></el-option>
+							</template>
+						</el-select>
+					</el-form-item>
+				</el-col>
+			</el-row>
+				
+			<el-row>
+				<el-col :span='24'>
+					<el-form-item  label="事件内容:" prop="content" :rules="[{ required: true, message: '请输入事件内容', trigger: 'blur' }]">
+						<el-input style="width: 452px;" type="textarea" placeholder='请输入事件内容...' v-model.trim="createParams.content"></el-input>
+					</el-form-item>
+
+					<el-form-item>
+						<el-button @click='submit("COMPLETE")'  v-track="{type: 'btn', metric: 'click', id: 'service-event:complete'}">结案</el-button>
+						<el-button type='primary' @click='submit("SUBMIT")'  v-track="{type: 'btn', metric: 'click', id: 'service-event:submit'}">提交</el-button>
+					</el-form-item>
+				</el-col>
+			</el-row>
+		</el-form>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list" style="margin-top: -1px;">
+		<el-table v-loading.body='loading' :data='event.items' stripe :virtual-scrollbar='true'>
+
+			<el-table-column label='序号' align='center' width="65">
+            	<template slot-scope="scope">
+					{{(scope.$index + 1) + (event.pageNo -1) * event.pageSize}}
+				</template>
+            </el-table-column>
+
+	        <el-table-column label="来电时间" width='140'>
+	        	<template slot-scope="scope">
+					{{scope.row.answerTime | dateFormat01}}
+				</template>
+	        </el-table-column>
+
+	        <el-table-column prop='id' label='事件编号' width="220"></el-table-column>
+
+	        <el-table-column prop='callMatter' label='来电事由' width="95" align='center'></el-table-column>
+
+	        <el-table-column prop='customerName' label='坐席人员' width="90"></el-table-column>
+
+	        <el-table-column label='状态' width="60">
+				<template slot-scope='scope'>
+					<span v-if='scope.row.status === 1' class='lxgs-green'>结案</span>
+					<span v-else='scope.row.status' class='lxgs-red'>提交</span>
+				</template>
+			</el-table-column>
+
+			<el-table-column prop='detailedContent' label='详细内容'></el-table-column>
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'params', 'page_size', 'getList')"
+		  		@current-change="handlePageChange($event, 'params', 'page_no', 'getList')"
+		  		:current-page='event.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='event.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='event.totalCount'></el-pagination>
+		</div>
+	</div>
+
+	<!-- 代注册 -->
+	<el-dialog :visible.sync="registPop" title="代注册" width="35%" @close="close('registParamsForm')">
+		<el-form :model="registParams" ref="registParamsForm" label-width="140px">
+			<el-form-item label="手机:" prop="phone" :rules="[{ required: true, message: '请输入手机', trigger: 'blur' }, {pattern: /^1[0-9]{10}$/,  message: '手机号不正确', trigger: 'blur'}]">
+				<el-input v-model.trim='registParams.phone' maxlength='11'></el-input>
+			</el-form-item>
+
+			<el-form-item label="姓名:" prop="name" :rules="[{ required: true, message: '请输入姓名', trigger: 'blur' }]">
+				<el-input v-model.trim='registParams.name' :minlength="2"></el-input>
+			</el-form-item>
+
+			<el-form-item label="性别:" prop="sex" :rules="[{ required: true, message: '请选择性别', trigger: 'blur' }]">
+				<el-radio v-model="registParams.sex" label="1">男</el-radio>
+				<el-radio v-model="registParams.sex" label="2">女</el-radio>
+			</el-form-item>
+
+			<el-form-item label="身份证号(选填):" prop="idNo">
+				<el-input v-model.trim='registParams.idNo'></el-input>
+			</el-form-item>
+
+			<el-form-item label="注册渠道:" prop="source" :rules="[{ required: true, message: '请选择注册渠道', trigger: 'blur' }]">
+				<el-radio v-model="registParams.source" label="wifi_lp">wifi_lp</el-radio>
+				<el-radio v-model="registParams.source" label="other">other</el-radio>
+			</el-form-item>
+		</el-form>
+
+		<span slot="footer">
+			<el-button type="primary" @click="regist('registParamsForm')">注 册</el-button>
+			<el-button @click="registPop = false">取 消</el-button>
+		</span>
+	</el-dialog>
+</div>

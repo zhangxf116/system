@@ -1,0 +1,123 @@
+<div class="lxgs-agent-record">
+	<!-- 标题头 -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<!-- 搜索 -->
+	<div class="lxgs-main-search">
+		<el-form ref="paramsForm" :model="params" :inline='true'>
+			<el-form-item prop='timeRange'>
+				<el-date-picker v-model="params.timeRange" type="daterange" value-format="timestamp" :default-time="['00:00:00', '23:59:59']" range-separator="-" start-placeholder="开始时间" end-placeholder="结束时间" @change="getTime('params', 'timeRange', 'from', 'to')"></el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop='user_name'>
+				<el-input v-model.trim="params.user_name" type='text' placeholder='客户姓名'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='nickname'>
+				<el-input v-model.trim="params.nickname" type='text' placeholder='常用称呼'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='user_phone'>
+				<el-input v-model.trim="params.user_phone" type='text' placeholder='客户手机号码'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='change_reason'>
+				<el-input v-model.trim="params.change_reason" type='text' placeholder='更换理由'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='ex_agent_id' v-if="!hasRole('AGENT_MEMBER')">
+				<el-select v-model="params.ex_agent_id" filterable placeholder="原小职姐">
+					<el-option
+						v-for="(i, index) in agentList"
+						:key="index"
+						:label="i.nickname"
+						:value="i.agentId">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='agent_id'>
+				<el-select v-model="params.agent_id" filterable placeholder="新小职姐">
+					<el-option
+						v-for="(i, index) in agentList"
+						:key="index"
+						:label="i.nickname"
+						:value="i.agentId">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('paramsForm')" v-track="{type: 'btn', metric: 'click', id: 'agent-change-log:search'}">查询</el-button>
+				<el-button @click="reset('paramsForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<el-table
+			v-loading.body='loading'
+			:data='agentHistory.items'
+		    stripe height="550"
+		    :virtual-scrollbar='true'>
+
+			<el-table-column
+	            label='序号'
+	            align='center'
+	            width="65">
+	            	<template slot-scope="scope">
+						{{(scope.$index + 1) + (agentHistory.pageNo -1) * agentHistory.pageSize}}
+					</template>
+	            </el-table-column>
+
+	        <el-table-column label="手机号" width="130">
+	        	<template slot-scope="scope">
+	                {{scope.row.phone | phoneMap}}
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="客户姓名" width="140">
+            	<template slot-scope="scope">
+	               <template v-if="scope.row.nickname">{{scope.row.nickname}}</template> <span class="lxgs-customer-name">({{scope.row.userName}})</span>
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column
+	            label="操作时间"
+	            width="140">
+	            <template slot-scope="scope">
+	                {{scope.row.assignTime  | dateFormat01}}
+	            </template>
+	        </el-table-column>
+	        
+	        <el-table-column label='原小职姐' prop='exAgentNickname' width="120"></el-table-column>
+
+	        <el-table-column label='新小职姐' prop='agentNickname' width="120"></el-table-column>
+
+	        <el-table-column
+	            label='操作人'
+	            prop='assigneeName'
+	            width="140">
+	            </el-table-column>
+
+	        <el-table-column
+	            label='更换理由'
+	            prop='changeReason'>
+	            </el-table-column>
+	        
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'params', 'page_size', 'getList')"
+		  		@current-change="handlePageChange($event, 'params', 'page_no', 'getList')"
+		  		:current-page='agentHistory.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='agentHistory.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='agentHistory.totalCount'></el-pagination>
+		</div>
+	</div>
+</div>

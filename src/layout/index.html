@@ -1,0 +1,193 @@
+<el-container class="lxgs-container">
+	<!-- Header -->
+	<el-header class="lxgs-header" height='40px'>
+		<span class="lxgs-logo">小职姐用户服务系统</span>		
+		
+		<ul class="lxgs-info">
+			<li>
+				你好，<template v-if="info.nick">{{info.nick}}</template> <template v-else>{{username}}</template>
+
+				<!-- 经纪人工作区域 -->
+				<template v-if="info.regions.length > 0 && (hasRole('AGENT_MEMBER') || hasRole('AGENT_MANAGER')) || hasRole('AGENT_SUPER_MANAGER')">，工作区域：<span class="region" v-for="(i, index) in info.regions">{{i}}</span></template>
+			</li>
+
+			<li @click="isShowPhoneWay = true" v-if="hasRole('AGENT_ASSISTANT') || hasRole('AGENT_ASSISTANT_MANAGER')" v-track="{type: 'btn', metric: 'click', id: 'nav:call-way'}">
+				<template v-for="i in callWayList">
+					<span v-if="i.defaultType" class="default-way">{{i.name}}</span>
+					<span v-if="i.using" class="select-way">{{i.name}}</span>
+				</template>
+			</li>
+
+			<li @click="knowledgeBase()" v-if="hasRole('AGENT_MEMBER') || hasRole('AGENT_MANAGER') || hasRole('AGENT_SUPER_MANAGER')" v-track="{type: 'btn', metric: 'click', id: 'nav:knowledge-base'}">知识库</li>
+
+			<li @click="skip('agent-single-sign-in')" v-if="hasRole('AGENT_MEMBER') || hasRole('AGENT_MANAGER') || hasRole('AGENT_SUPER_MANAGER')" v-track="{type: 'btn', metric: 'click', id: 'nav:my-work'}">我的工作</li>
+
+			<li @click="skip('agent-info')" v-if="hasRole('AGENT_MEMBER') || hasRole('AGENT_MANAGER') || hasRole('AGENT_SUPER_MANAGER')" v-track="{type: 'btn', metric: 'click', id: 'nav:agent-info'}">个人资料</li>
+
+			<li @click="skip('password')" v-if="hasRole('AGENT_MEMBER') || hasRole('AGENT_MANAGER') || hasRole('AGENT_SUPER_MANAGER')" v-track="{type: 'btn', metric: 'click', id: 'nav:change-password'}">修改密码</li>
+
+			<li @click="logout" v-track="{type: 'btn', metric: 'click', id: 'nav:logout'}">退出系统</li>
+		</ul>
+	</el-header>
+
+	<el-container>
+		<!-- Sidebar -->
+		<el-aside width="180px">
+			<el-menu
+				:router='true'
+				:default-active="activeIndex"
+				class='lxgs-menubar'
+				background-color='#383d42'
+				text-color='#c4c5c7'
+				active-text-color="#fff"
+				@select='select'
+				:unique-opened='true'>
+				<el-menu-item index="dashboard" v-if="hasRole('AGENT_MEMBER') || hasRole('AGENT_MANAGER') || hasRole('AGENT_SUPER_MANAGER')" :route="{name: 'dashboard'}" v-track="{type: 'btn', metric: 'click', id: 'menu:dashboard'}">
+					<i class="lxgs-icon-home"></i> <span slot="title">Dashboard</span>
+				</el-menu-item>
+
+				<el-submenu index="1" v-if="hasRole('AGENT_MEMBER')">
+					<template slot="title">
+						<i class="lxgs-icon-books"></i> <span>任务管理</span>
+					</template>
+					<el-menu-item-group>
+						<el-menu-item index="task" :route="{name: 'task'}" v-track="{type: 'btn', metric: 'click', id: 'menu:task'}">任务列表</el-menu-item>
+					</el-menu-item-group>
+				</el-submenu>
+
+				<el-submenu index="2" v-if="hasRole('AGENT_MEMBER') || hasRole('AGENT_MANAGER') || hasRole('AGENT_SUPER_MANAGER')">
+					<template slot="title">
+						<i class="lxgs-icon-users"></i> <span>客户管理</span>
+					</template>
+					<el-menu-item-group>
+						<el-menu-item index="customer" :route="{name: 'customer'}" v-if="hasRole('AGENT_MEMBER')" v-track="{type: 'btn', metric: 'click', id: 'menu:customer-list'}">客户列表</el-menu-item>
+						<el-menu-item index="customer-reserve" :route="{name: 'customer-reserve'}" v-track="{type: 'btn', metric: 'click', id: 'menu:reserve-customer'}">预约客户</el-menu-item>
+						<el-menu-item index="customer-assign" :route="{name: 'customer-assign'}" v-if="hasRole('AGENT_MANAGER') || hasRole('AGENT_SUPER_MANAGER')" v-track="{type: 'btn', metric: 'click', id: 'menu:customer-assign'}">客户分配</el-menu-item>
+						<el-menu-item index="customer-core" :route="{name: 'customer-core'}" v-track="{type: 'btn', metric: 'click', id: 'menu:core-customer'}">核心客户</el-menu-item>
+						<el-menu-item index="customer-active" :route="{name: 'customer-active'}" v-track="{type: 'btn', metric: 'click', id: 'menu:active-customer'}">活跃客户</el-menu-item>
+						<el-menu-item index="customer-referral" :route="{name: 'customer-referral'}" v-track="{type: 'btn', metric: 'click', id: 'menu:customer-referral'}">邀请客户</el-menu-item>
+						<el-menu-item index="customer-spring-reserve" :route="{name: 'customer-spring-reserve'}" v-track="{type: 'btn', metric: 'click', id: 'menu:customer-spring-reserve'}">预约春节岗位</el-menu-item>
+						<el-menu-item index="customer-spring-trip" :route="{name: 'customer-spring-trip'}" v-track="{type: 'btn', metric: 'click', id: 'menu:customer-spring-trip'}">瓜分路费客户</el-menu-item>
+					</el-menu-item-group>
+				</el-submenu>
+
+				<el-submenu index="3" v-if="hasRole('AGENT_MEMBER') || hasRole('AGENT_MANAGER') || hasRole('AGENT_SUPER_MANAGER') || hasRole('AGENT_ASSISTANT') || hasRole('AGENT_ASSISTANT_MANAGER')">
+					<template slot="title">
+						<i class="lxgs-icon-database"></i> <span>企业信息</span>
+					</template>
+					<el-menu-item-group>
+						<el-menu-item index="position-list" :route="{name: 'position-list'}" v-track="{type: 'btn', metric: 'click', id: 'menu:position-list'}">企业职位列表</el-menu-item>
+					</el-menu-item-group>
+				</el-submenu>
+
+				<el-submenu index="4" v-if="hasRole('AGENT_MANAGER') || hasRole('AGENT_SUPER_MANAGER')">
+					<template slot="title">
+						<i class="lxgs-icon-user-tie"></i> <span>小职姐管理</span>
+					</template>
+					<el-menu-item-group>
+						<el-menu-item index="agent" :route="{name: 'agent'}" v-track="{type: 'btn', metric: 'click', id: 'menu:agent-change-log'}">更换小职姐</el-menu-item>
+						<el-menu-item index="task-all" :route="{name: 'task-all'}" v-track="{type: 'btn', metric: 'click', id: 'menu:agent-history-task'}">小职姐任务</el-menu-item>
+						<el-menu-item index="agent-sign-in" :route="{name: 'agent-sign-in'}" v-track="{type: 'btn', metric: 'click', id: 'menu:online'}">上下线记录</el-menu-item>
+						<el-menu-item index="agent-scheduling" :route="{name: 'agent-scheduling'}" v-track="{type: 'btn', metric: 'click', id: 'menu:scheduling'}">排班记录</el-menu-item>
+						<el-menu-item index="call-record" :route="{name: 'call-record'}" v-track="{type: 'btn', metric: 'click', id: 'menu:call'}">通话记录</el-menu-item>
+					</el-menu-item-group>
+				</el-submenu>
+
+				<el-submenu index="5" v-if="hasRole('AGENT_MANAGER') || hasRole('AGENT_SUPER_MANAGER') || hasRole('AGENT_MEMBER')">
+					<template slot="title">
+						<i class="lxgs-icon-books"></i> <span>数据报表</span>
+					</template>
+					<el-menu-item-group>
+						<el-menu-item index="report-agent-summary" :route="{name: 'report-agent-summary'}" v-track="{type: 'btn', metric: 'click', id: 'menu:daily-summary'}" v-if="!hasRole('AGENT_MEMBER')">日报数据</el-menu-item>
+
+						<el-menu-item index="report-agent-assignments" :route="{name: 'report-agent-assignments'}" v-track="{type: 'btn', metric: 'click', id: 'menu:agent-user-count'}" v-if="!hasRole('AGENT_MEMBER')">小职姐用户数</el-menu-item>
+
+						<el-menu-item index="report-contact" :route="{name: 'report-contact'}" v-track="{type: 'btn', metric: 'click', id: 'menu:agent-contact'}" v-if="!hasRole('AGENT_MEMBER')">接通率</el-menu-item>
+
+						<el-menu-item index="work-track" :route="{name: 'work-track'}" v-track="{type: 'btn', metric: 'click', id: 'menu:work-track'}" v-if="!hasRole('AGENT_MEMBER')">工作监控</el-menu-item>
+						
+						<el-menu-item index="bonus" :route="{name: 'bonus'}" v-track="{type: 'btn', metric: 'click', id: 'menu:bonus'}" v-if="hasRole('AGENT_MANAGER') || hasRole('AGENT_SUPER_MANAGER') || hasRole('AGENT_MEMBER')">小职姐提成</el-menu-item>
+						<el-menu-item index="conversion" :route="{name: 'conversion'}" v-track="{type: 'btn', metric: 'click', id: 'menu:conversion'}" v-if="hasRole('AGENT_MANAGER') || hasRole('AGENT_SUPER_MANAGER') || hasRole('AGENT_MEMBER')">转化奖励表</el-menu-item>
+					</el-menu-item-group>
+				</el-submenu>
+
+				<el-submenu index="6" v-if="hasRole('AGENT_ASSISTANT') || hasRole('AGENT_ASSISTANT_MANAGER')">
+					<template slot="title">
+						<i class="lxgs-icon-address-book"></i> <span>小职姐助理</span>
+					</template>
+					<el-menu-item-group>
+						<el-menu-item index="return-visit" :route="{name: 'return-visit'}" v-track="{type: 'btn', metric: 'click', id: 'menu:return-visit'}">新户回访</el-menu-item>
+					</el-menu-item-group>
+				</el-submenu>
+
+				<el-submenu index="7" v-if="hasRole('AGENT_SUPER_MANAGER')">
+					<template slot="title">
+						<i class="lxgs-icon-cog"></i> <span>配置管理</span>
+					</template>
+					<el-menu-item-group>
+						<el-menu-item index="agent-account" :route="{name: 'agent-account'}" v-track="{type: 'btn', metric: 'click', id: 'menu:account'}">账号管理</el-menu-item>
+						<el-menu-item index="wechat" :route="{name: 'wechat'}" v-track="{type: 'btn', metric: 'click', id: 'menu:wechat'}">微信号管理</el-menu-item>
+						<el-menu-item index="agent-assign-count-all" :route="{name: 'agent-assign-count-all'}" v-track="{type: 'btn', metric: 'click', id: 'menu:total-assign'}">总分配数</el-menu-item>
+						<el-menu-item index="agent-assign-count" :route="{name: 'agent-assign-count'}" v-track="{type: 'btn', metric: 'click', id: 'menu:single-agent-assign'}">小职姐分配数</el-menu-item>
+						<el-menu-item index="call-seat" :route="{name: 'call-seat'}" v-track="{type: 'btn', metric: 'click', id: 'menu:call-seat'}">坐席配置</el-menu-item>
+						<el-menu-item index="work-region" :route="{name: 'work-region'}" v-track="{type: 'btn', metric: 'click', id: 'menu:work-region'}">工作区域</el-menu-item>
+						<el-menu-item index="team-config" :route="{name: 'team-config'}" v-track="{type: 'btn', metric: 'click', id: 'menu:team-config'}">组员配置</el-menu-item>
+					</el-menu-item-group>
+				</el-submenu>
+
+				<el-submenu index="8" v-if="hasRole('AGENT_ASSISTANT_MANAGER')">
+					<template slot="title">
+						<i class="lxgs-icon-cog"></i> <span>配置管理</span>
+					</template>
+					<el-menu-item-group>
+						<el-menu-item index="call-assistant-seat" :route="{name: 'call-assistant-seat'}" v-track="{type: 'btn', metric: 'click', id: 'menu:assistant-manager-call-seat'}">坐席配置</el-menu-item>
+					</el-menu-item-group>
+				</el-submenu>
+
+				<el-submenu index="9" v-if="hasRole('AGENT_YY_OPERATOR')">
+					<template slot="title">
+						<i class="lxgs-icon-cog"></i> <span>配置管理</span>
+					</template>
+					<el-menu-item-group>
+						<el-menu-item index="channel" :route="{name: 'channel'}" v-track="{type: 'btn', metric: 'click', id: 'menu:channel'}">渠道配置</el-menu-item>
+					</el-menu-item-group>
+				</el-submenu>
+
+
+				<el-menu-item index="10" v-if="hasRole('KF_MANAGER') || hasRole('KF_SEAT')" :route="{name: 'customer-event'}" v-track="{type: 'btn', metric: 'click', id: 'menu:service-outline'}">
+					<i class="lxgs-icon-books"></i> <span slot="title">今日概览</span>
+				</el-menu-item>
+
+				<el-menu-item index="11" v-if="hasRole('KF_MANAGER') || hasRole('KF_SEAT')" :route="{name: 'entryin'}" v-track="{type: 'btn', metric: 'click', id: 'menu:service-entry-customer'}">
+					<i class="lxgs-icon-users"></i> <span slot="title">入职客户</span>
+				</el-menu-item>
+
+				<el-menu-item index="12" v-if="hasRole('KF_MANAGER') || hasRole('KF_SEAT')" :route="{name: 'return-visit-statistics'}" v-track="{type: 'btn', metric: 'click', id: 'menu:service-statistics'}">
+					<i class="lxgs-icon-database"></i> <span slot="title">回访统计</span>
+				</el-menu-item>
+			</el-menu>
+		</el-aside>
+
+		<!-- Content -->
+		<el-container>
+			<el-main>
+				<transition>
+					<router-view></router-view>
+				</transition>
+			</el-main>
+		</el-container>
+	</el-container>
+
+	
+	<!-- 切换拨打电话方式 -->
+	<el-dialog title="切换拨打电话方式" :visible.sync="isShowPhoneWay" width="30%">
+		<el-radio-group v-model="phoneWayData.type" size="mini">
+			<el-radio v-for='(i, index) in callWayList' :key="index" :label="i.type" border size="mini">{{i.name}}</el-radio>
+		</el-radio-group>
+
+		<span slot="footer" class="dialog-footer">
+			<el-button @click="isShowPhoneWay = false">取 消</el-button>
+			<el-button type="primary" @click="switchChannel">确 定</el-button>
+		</span>
+	</el-dialog>
+</el-container>

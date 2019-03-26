@@ -1,0 +1,56 @@
+<div class="lxgs-tab-content">
+	<!-- 入职离职记录列表 -->
+	<el-table
+		v-loading.body='loading'
+		element-loading-background="rgba(0, 0, 0, 0.6)"
+		:data='onboardingRecord.items'
+	    stripe
+	    :virtual-scrollbar='true'>
+
+		<el-table-column
+            label='序号'
+            align='center'
+            width="65">
+            <template slot-scope="scope">
+				{{(scope.$index + 1) + (onboardingRecord.pageNo -1) * onboardingRecord.pageSize}}
+			</template>
+        </el-table-column>
+
+		<el-table-column
+			label="岗位申请时间"
+			width="140">
+				<template slot-scope="scope">
+	                {{scope.row.applyTime | dateFormat01}}
+	            </template>
+			</el-table-column>
+
+		<el-table-column
+			prop='positionName'
+			label="岗位名称"></el-table-column>
+
+		<el-table-column
+			label="岗位状态变更时间"
+			width="140">
+				<template slot-scope="scope">
+	                {{scope.row.occurTime | dateFormat01}}
+	            </template>
+			</el-table-column>
+
+		<el-table-column
+			label="岗位状态"
+			width="140"
+			prop="onboardingStatus"></el-table-column>
+	</el-table>
+
+	<!-- 入职离职记录列表分页 -->
+	<div class='lxgs-main-pagination'>
+		<el-pagination
+			@size-change="handlePageChange($event, 'onboardingData', 'page_size', 'getOnboardingList')"
+		  	@current-change="handlePageChange($event, 'onboardingData', 'page_no', 'getOnboardingList')"
+	  		:current-page='onboardingRecord.pageNo'
+			:page-sizes="pageSizes"
+			:page-size='onboardingRecord.pageSize'
+			layout="total, sizes, prev, pager, next, jumper"
+			:total='onboardingRecord.totalCount'></el-pagination>
+	</div>
+</div>

@@ -1,0 +1,158 @@
+<div class="lxgs-customer-event">
+	<!-- 标题头 -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<!-- 今日概要 -->
+	<div class="lxgs-main-content">
+		<el-row>
+			<el-col :span='4'>
+				<em class="value">{{getTimestamp() | dateFormat02}}</em> <span class="key">日期</span>
+			</el-col>
+			<el-col :span='4'>
+				<em class="value">{{receptionist.name}}</em> <span class="key">坐席</span>
+			</el-col>
+			<el-col :span='4'>
+				<em class="value">{{receptionist.receptionCount}}</em> <span class="key">接电量</span>
+			</el-col>
+			<el-col :span='4'>
+				<em class="value">{{receptionist.eventCount}}</em> <span class="key">事件量</span>
+			</el-col>
+			<el-col :span='4'>
+				<em class="value">{{receptionist.upTime}}</em> <span class="key">在线时长</span>
+			</el-col>
+			<el-col :span='4'>
+				<em class="value">{{receptionist.satisfaction}}</em> <span class="key">满意度</span>
+			</el-col>
+		</el-row>
+	</div>
+
+	<!-- 录入事件 -->
+	<h2 class="lxgs-main-title" style="margin-top: 15px;">录入事件</h2>
+	<div class="lxgs-main-content" style="margin-top: -1px;">
+		<el-form ref="customerParamsForm" :inline='true' :model="customerParams">
+			<el-form-item prop='phone' :rules="[{ required: true, message: '请输入客户电话', trigger: 'blur' }]">
+				<el-input v-model.trim='customerParams.phone' placeholder="客户电话" onkeyup="value=value.replace(/[^\d]/g,'')" maxlength="11"></el-input>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click='searchCustomerId("customerParamsForm")' v-track="{type: 'btn', metric: 'click', id: 'service-outline:event'}">查询</el-button>
+				<el-button @click='resetCustomerId("customerParamsForm")'>重置</el-button>
+			</el-form-item>
+
+			<el-form-item v-if="isShowRecordLink">
+                <router-link target='_blank' :to="{
+	                    name: 'customer-event-record',
+	                    query: {
+	                        userId: userId,
+	                        phone: customerParams.phone,
+	                        recepTime: getTimestamp(),
+	                    }
+	                }">
+	                <span>录入客户{{userId}}事件</span>
+	            </router-link>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 标题头 -->
+	<h2 class="lxgs-main-title action" style="margin-top: 15px;">
+		我的事件
+
+		<div class="export">
+			<el-button  type="primary" @click="getExport" v-track="{type: 'btn', metric: 'click', id: 'service-outline:export'}">全部导出</el-button>
+		</div>
+	</h2>
+	<div class="lxgs-main-search" style="margin-top: -1px;">
+		<el-form ref="eventForm" :inline='true' :model="params">
+			<el-form-item prop='timeRange'>
+				<el-date-picker v-model="params.timeRange" value-format="timestamp" type="daterange" range-separator="至" start-placeholder="来电时间开始" end-placeholder="来电时间结束" :default-time="['00:00:00', '23:59:59']" @change="getTime('params', 'timeRange', 'incoming_time_from', 'incoming_time_to')"></el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop='user_id'>
+				<el-input v-model.trim='params.user_id' placeholder="客户编号"></el-input>
+			</el-form-item>
+
+			<el-form-item prop='event_no'>
+				<el-input v-model.trim='params.event_no' placeholder="事件编号"></el-input>
+			</el-form-item>
+
+			<el-form-item prop='event_type'>
+				<el-select v-model.trim='params.event_type' placeholder="来电事由">
+					<el-option value="咨询"></el-option>
+					<el-option value="投诉"></el-option>
+					<el-option value="反馈"></el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='customer_type'>
+				<el-select v-model='params.customer_type' placeholder="来电类型">
+					<el-option value='SIGN_UP' label='注册用户'></el-option>
+					<el-option value='NON_SIGN_UP' label='非注册用户'></el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='receptionist'>
+				<el-input v-model.trim='params.receptionist' placeholder="坐席人员"></el-input>
+			</el-form-item>
+
+			<el-form-item prop='status'>
+				<el-select v-model='params.status' placeholder="事件状态">
+					<el-option value='COMPLETE' label='结案'></el-option>
+					<el-option value='SUBMIT' label='提交'></el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('eventForm')" v-track="{type: 'btn', metric: 'click', id: 'service-outline:search'}">查询</el-button>
+				<el-button @click="reset('eventForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list" style="margin-top: -1px;">
+		<el-table v-loading.body='loading' :data='event.items' stripe :virtual-scrollbar='true'>
+
+			<el-table-column label='序号' align='center' width="65">
+            	<template slot-scope="scope">
+					{{(scope.$index + 1) + (event.pageNo -1) * event.pageSize}}
+				</template>
+            </el-table-column>
+
+	        <el-table-column label="来电时间" width='140'>
+	        	<template slot-scope="scope">
+					{{scope.row.answerTime | dateFormat01}}
+				</template>
+	        </el-table-column>
+
+	        <el-table-column label="客户编号" prop='userId' width="90"></el-table-column>
+
+	        <el-table-column prop='id' label='事件编号' width="220"></el-table-column>
+
+	        <el-table-column prop='callMatter' label='来电事由' width="95" align='center'></el-table-column>
+
+	        <el-table-column prop='customerName' label='坐席人员' width="90"></el-table-column>
+
+	        <el-table-column label='状态' width="60">
+				<template slot-scope='scope'>
+					<span v-if='scope.row.status === 1' class='lxgs-green'>结案</span>
+					<span v-else='scope.row.status' class='lxgs-red'>提交</span>
+				</template>
+			</el-table-column>
+
+			<el-table-column prop='detailedContent' label='详细内容'></el-table-column>
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'params', 'page_size', 'getList')"
+		  		@current-change="handlePageChange($event, 'params', 'page_no', 'getList')"
+		  		:current-page='event.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='event.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='event.totalCount'></el-pagination>
+		</div>
+	</div>
+</div>

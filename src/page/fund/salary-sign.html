@@ -1,0 +1,89 @@
+﻿<div class="lxgs-fund-salary-sign">
+	<!-- 标题头  -->
+	<h2 class="lxgs-main-title">
+		<span class="action">{{$route.meta.pageTitle}}</span>
+		<router-link class="action" :to="{name: 'salary-release', params: {userId: $route.params.userId}}" v-track="{type: 'btn', metric: 'click', id: 'sign-in:zx-pay'}">领周薪发放记录</router-link>
+		<router-link class="action" :to="{name: 'day-release', params: {userId: $route.params.userId}}" v-track="{type: 'btn', metric: 'click', id: 'sign-in:daily-pay'}">日日返发放记录</router-link>
+	</h2>
+
+	<!-- 客戶信息 -->
+	<div class="lxgs-main-content">
+		<ul class="customer-info clearfix">
+			<li>{{info.userName}}</li>
+			<li>工资卡：{{info.salaryCardBank}} {{info.salaryCard}}</li>
+			<li>设备号：{{info.deviceId}}</li>
+		</ul>
+		<div class="time-filter">
+			<el-date-picker style="width: 270px;" v-model="timeRange" value-format="timestamp" type="daterange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" :picker-options="timeOption" @change="getTime"></el-date-picker>
+		</div>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<el-table
+			v-loading.body='loading'
+			element-loading-background="rgba(0, 0, 0, 0.6)"
+			:data='salarySignIn.items'
+		    border height="520"
+		    :virtual-scrollbar='true'>
+
+		    <el-table-column
+	            label='日期'
+	            width="95">
+				<template slot-scope="scope">
+					<span>{{scope.row.day | dateFormat02}}</span>
+				</template>
+	        </el-table-column>
+
+	        <el-table-column label='打卡时间和位置'>
+				<template slot-scope="scope">
+					<span class="line" v-for="i in scope.row.on">
+						【上班】{{i.time | dateFormat01}}
+						<b class="red" v-if="i.type == 3 || i.type == 4">补打</b>
+						<b v-else>{{i.address}}</b>
+					</span>
+					<span class="line" v-for="i in scope.row.off">
+						【下班】{{i.time | dateFormat01}}
+						<b class="red" v-if="i.type == 3 || i.type == 4">补打</b>
+						<b v-else>{{i.address}}</b>
+					</span>
+				</template>
+	        </el-table-column>
+
+	        <el-table-column
+	            label='比对'>
+				<template slot-scope="scope">
+					<span class="line" v-for="i in scope.row.on">{{i.error}}</span>
+					<span class="line" v-for="i in scope.row.off">{{i.error}}</span>
+				</template>
+	        </el-table-column>
+
+	        <el-table-column
+	            label='操作'
+	            width="120">
+				<template slot-scope="scope">
+					<span class="line">
+						<el-button type="primary" size="mini" v-if='scope.row.goToWorkStatus === 1' @click="sign(true, scope.row.day)" v-track="{type: 'btn', metric: 'click', id: 'sign-in:repair'}">补打上班</el-button>
+						<span v-if='scope.row.goToWorkStatus === 2'>已补打</span>
+					</span>
+					<span class="line">
+						<el-button type="primary" size="mini" v-if='scope.row.offWorkStatus === 1' @click="sign(false, scope.row.day)" v-track="{type: 'btn', metric: 'click', id: 'sign-in:repair'}">补打下班</el-button>
+						<span v-if='scope.row.offWorkStatus === 2'>已补打</span>
+					</span>
+				</template>
+	        </el-table-column>
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'salarySignInData', 'page_size', 'getSalarySignInList')"
+		  		@current-change="handlePageChange($event, 'salarySignInData', 'page_no', 'getSalarySignInList')"
+		  		:current-page='salarySignIn.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='salarySignIn.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='salarySignIn.totalCount'></el-pagination>
+		</div>
+	</div>
+</div>

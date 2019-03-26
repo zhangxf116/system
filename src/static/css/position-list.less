@@ -1,0 +1,53 @@
+.lxgs-position-list {
+	.position-expand {
+		.el-form-item {
+			margin-bottom: 0;
+
+			label {
+				color: @green;
+			}
+
+			pre {
+				display: inline-block;
+				margin: 0;
+			    font-size: 14px;
+			    line-height: 20px;
+			    font-family: initial;
+			    white-space: pre-wrap;
+				word-wrap: break-word;
+
+				p {
+					margin-top: 0;
+				}
+			}
+		}
+	}
+	
+	/** 招聘需求样式 **/
+	.interview-date-list {
+		color: @white;
+		background-color: @green;
+	}
+	.interview-date-list,
+	.awards,
+	.address,
+	.total {
+		display: block;
+		margin: 0 -10px;
+		padding: 0 10px;
+		height: 24px;
+		border-bottom: 1px solid @border-light-color;
+		white-space: nowrap;
+
+		&:last-child {
+			border: 0;
+		}
+	}
+	.address,
+	.awards {
+		overflow: hidden;
+		text-overflow:ellipsis;
+		white-space: nowrap;
+		cursor: pointer;
+	}
+}

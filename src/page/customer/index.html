@@ -1,0 +1,194 @@
+<div class="lxgs-customer">
+	<!-- 标题头 -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<div class="lxgs-main-search">
+		<!-- 搜索 -->
+		<el-form ref="paramsForm" :model="params" :inline='true'>
+			<el-form-item prop='timeRange'>
+				<el-date-picker
+					v-model="params.timeRange"
+					type="daterange"
+					value-format="timestamp"
+					range-separator="-"
+					start-placeholder="分配时间起"
+					end-placeholder="分配时间止"
+					:default-time="['00:00:00', '23:59:59']"
+					@change="getTime('params', 'timeRange', 'match_time_from', 'match_time_to')">
+					</el-date-picker>
+			</el-form-item>
+			<el-form-item prop='user_name'>
+				<el-input v-model.trim="params.user_name" type='text' placeholder='客户姓名'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='nickname'>
+				<el-input v-model.trim="params.nickname" type='text' placeholder='常用称呼'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='user_phone'>
+				<el-input v-model.trim="params.user_phone" type='text' placeholder='手机号码'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='referrer_phone'>
+				<el-input v-model.trim="params.referrer_phone" type='text' placeholder='推荐人手机号码'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='weixin'>
+				<el-input v-model.trim="params.weixin" type='text' placeholder='客户微信号'></el-input>
+			</el-form-item>
+
+			<!-- <el-form-item prop='source'>
+				<el-select v-model="params.source" placeholder="来源">
+					<el-option
+						v-for="(i, index) in sourceList"
+						:key="index"
+						:label="i.sourceName + '(' + i.source + ')'"
+						:value="i.source">
+						</el-option>
+				</el-select>
+			</el-form-item> -->
+
+			<el-form-item prop='is_referrer'>
+				<el-select v-model="params.is_referrer" placeholder="请选择是否为推荐用户">
+					<el-option label="是" :value="1"></el-option>
+					<el-option label="否" :value="0"></el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='rank'>
+				<el-select v-model="params.rank" placeholder="请选择用户等级">
+					<el-option
+						v-for="(i, index) in userRankList"
+						:key="index"
+						:label="i"
+						:value="i">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='not_contacted'>
+				<el-radio-group v-model="params.not_contacted" @change="getList">
+					<el-radio :label="1">7日内未联系</el-radio>
+					<el-radio :label="2">8-15日内未联系</el-radio>
+					<el-radio :label="3">16-30日未联系</el-radio>
+					<el-radio :label="4">30日以上未联系</el-radio>
+				</el-radio-group>
+			</el-form-item>
+
+
+			<el-form-item>
+				<el-button type="primary" @click="search('paramsForm')" v-track="{type: 'btn', metric: 'click', id: 'customer-list:search'}">查询</el-button>
+				<el-button @click="reset('paramsForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<el-table
+			v-loading.body='loading'
+			:data='customer.items'
+		    stripe height="550"
+		    :virtual-scrollbar='true' @sort-change="sort">
+
+			<el-table-column label='序号' align='center' width="60">
+            	<template slot-scope="scope">
+					{{(scope.$index + 1) + (customer.pageNo -1) * customer.pageSize}}
+				</template>
+            </el-table-column>
+
+	        <el-table-column label="手机号" width="130">
+	            <template slot-scope="scope">
+	                {{scope.row.phone | phoneMap}}
+	                <lxgs-call :user-id="scope.row.userId" v-if='isTel' v-track="{type: 'btn', metric: 'click', id: 'customer-list:call'}"></lxgs-call>
+					<lxgs-call :user-id="scope.row.userId" call-way='app' icon='el-icon-mobile-phone' v-track="{type: 'btn', metric: 'click', id: 'customer-list:call-app'}"></lxgs-call>
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="客户姓名" width="140">
+	            <template slot-scope="scope">
+	                <template v-if="scope.row.nickname">{{scope.row.nickname}}</template> 
+            		<router-link :to='{name: "customer-detail", params: {customerId: scope.row.userId}}' target='_blank'  class="lxgs-customer-name" v-track="{type: 'btn', metric: 'click', id: 'customer-list:customer-detail'}">({{scope.row.userName}})</router-link>
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="等级" width="50" prop='rank'></el-table-column>
+
+	        <el-table-column label='注册时间' prop='registerTime' width="140" sortable='custom'>
+            	<template slot-scope="scope">
+	                {{scope.row.registerTime | dateFormat01}}
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label='分配时间' width="140" prop='matchTime' sortable='custom'>
+            	<template slot-scope="scope">
+	                {{scope.row.matchTime | dateFormat01}}
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label='最后一次联系时间' width="160" prop='lastContactTime' sortable='custom'> <template slot-scope="scope">{{scope.row.lastContactTime | dateFormat01}}</template></el-table-column>
+
+	        <el-table-column prop='lastContactCommentOperatorName' width="100" label="注记人"></el-table-column>
+	        
+	        <el-table-column prop='lastContactComment' min-width="140" label="最后一次注记内容"></el-table-column>
+
+	        <el-table-column prop='weixin' width="100" label="微信号"></el-table-column>
+
+	        <el-table-column
+	            label='注册来源'
+	            width="110">
+	            	<template slot-scope="scope">
+						{{scope.row.sourceName}} ({{scope.row.source}})
+		            </template>
+	            </el-table-column>
+
+	        <el-table-column
+	            label='推荐人'
+	            prop='referrerName'
+	            width="120">
+	            </el-table-column>
+
+	        <el-table-column label="操作" width="80" fixed="right">
+				<template slot-scope="scope">
+	                <el-button type="text" size="medium" @click="openReferral(scope.row.userId, scope.row.userName)" v-track="{type: 'btn', metric: 'click', id: 'customer-list:referral'}">推荐关系</el-button>
+	            </template>
+			</el-table-column>
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'params', 'page_size', 'getList')"
+		  		@current-change="handlePageChange($event, 'params', 'page_no', 'getList')"
+		  		:current-page='customer.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='customer.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='customer.totalCount'></el-pagination>
+		</div>
+	</div>
+
+	<!-- 弹出框： -->
+	<el-dialog
+		title="设置推荐关系"
+		:visible.sync="isShowReferral"
+		width="50%">
+			<p class="tips">绑定后，被邀请人和邀请人为同一小职姐</p>
+			<el-form ref="referralForm" :model="referralData" :rules="referralDataRules" label-width="100px">
+				<el-form-item label="邀请人：">{{currentReferrerName}}</el-form-item>
+
+				<el-form-item prop="referralName" label="被邀请人：">
+					<el-input v-model="referralData.referralName" placeholder="请填写被邀请人姓名"></el-input>
+				</el-form-item>
+
+				<el-form-item prop="referralPhone" label="手机号：">
+					<el-input v-model="referralData.referralPhone" placeholder="请填写被邀请人手机号"></el-input>
+				</el-form-item>
+			</el-form>
+
+			<span slot="footer" class="dialog-footer">
+				<el-button @click="closeReferral('referralForm')">取消</el-button>
+				<el-button type="primary" @click="submitReferral('referralForm')">确定</el-button>
+			</span>
+	</el-dialog>
+</div>

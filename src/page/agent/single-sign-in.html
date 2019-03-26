@@ -1,0 +1,82 @@
+<div class="lxgs-agent-single-sign-in">
+	<!-- 标题头 -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<div class="lxgs-main-search">
+		<!-- 搜索 -->
+		<el-form ref="agentSignInForm" :model="params" :inline='true'>
+			<el-form-item prop='from'>
+				<el-date-picker v-model="params.from" type="date" :editable="false" value-format="timestamp" placeholder="开始时间"></el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop='to'>
+				<el-date-picker v-model="params.to" type="date" :editable="false" value-format="timestamp" placeholder="结束时间"></el-date-picker>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('agentSignInForm')" v-track="{type: 'btn', metric: 'click', id: 'my-work:search'}">查询</el-button>
+				<el-button type="primary" @click="reset('agentSignInForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 打卡 -->
+	<span class="sign-in" @click="signIn" v-track="{type: 'btn', metric: 'click', id: 'my-work:punch'}">打卡</span>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<el-table v-loading.body='loading' :data='agentSignIn.items' stripe height="580" :virtual-scrollbar='true'>
+
+			<el-table-column label='序号' align='center' width="65">
+            	<template slot-scope="scope">
+					{{(scope.$index + 1) + (agentSignIn.pageNo -1) * agentSignIn.pageSize}}
+				</template>
+			</el-table-column>
+
+	        <el-table-column
+	            label="时间"
+	            width="140">
+	            <template slot-scope="scope">
+	                {{scope.row.day  | dateFormat02}}
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column
+	            label="上线时间"
+	            width="140">
+	            <template slot-scope="scope">
+	            	<span v-if="scope.row.goToWorkTime">已打卡</span>
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column
+	            label="下线时间"
+	            width="140">
+	            <template slot-scope="scope">
+	                <span v-if="scope.row.offWorkTime">已打卡</span>
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column
+	            label='在线时长'>
+	            <template slot-scope="scope">
+	                <span v-if="scope.row.fullTime === true">在线时长已够</span>
+	                <span class="not-enough" v-if="scope.row.fullTime === false">在线时长不够</span>
+	            </template>
+	        </el-table-column>
+	        
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'params', 'page_size', 'getList')"
+		  		@current-change="handlePageChange($event, 'params', 'page_no', 'getList')"
+		  		:current-page='agentSignIn.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='agentSignIn.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='agentSignIn.totalCount'></el-pagination>
+		</div>
+	</div>
+</div>

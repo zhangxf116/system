@@ -1,0 +1,136 @@
+<div>
+	<!-- 标题头  -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<div class="lxgs-main-search">
+		<!-- 搜索 -->
+		<el-form ref="paramsForm" :model="params" :inline='true'>
+			<el-form-item prop='inviteTimeRange'>
+				<el-date-picker v-model="params.inviteTimeRange" type="daterange" value-format="timestamp" :default-time="['00:00:00', '23:59:59']" range-separator="-" start-placeholder="邀请时间起" end-placeholder="邀请时间止" @change="getTime('params', 'inviteTimeRange', 'invite_time_from', 'invite_time_to')"></el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop='signUpTimeRange'>
+				<el-date-picker v-model="params.signUpTimeRange" type="daterange" value-format="timestamp" :default-time="['00:00:00', '23:59:59']" range-separator="-" start-placeholder="注册时间起" end-placeholder="注册时间止" @change="getTime('params', 'signUpTimeRange', 'sign_up_time_from', 'sign_up_time_to')"></el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop='referrer_phone'>
+				<el-input type='text' placeholder='邀请人手机号' v-model.trim='params.referrer_phone'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='referee_phone'>
+				<el-input type='text' placeholder='被邀请人手机号' v-model.trim='params.referee_phone'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='current_agent_id' v-if="!hasRole('AGENT_MEMBER')">
+				<el-select v-model="params.current_agent_id" filterable placeholder="当前小职姐">
+					<el-option
+						v-for="(i, index) in agentList"
+						:key="index"
+						:label="i.nickname"
+						:value="i.agentId">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='referring_agent_id' v-if="!hasRole('AGENT_MEMBER')">
+				<el-select v-model="params.referring_agent_id" filterable placeholder="邀请小职姐">
+					<el-option
+						v-for="(i, index) in agentList"
+						:key="index"
+						:label="i.nickname"
+						:value="i.agentId">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('paramsForm')" v-track="{type: 'btn', metric: 'click', id: 'referral-customer:search'}">查询</el-button>
+				<el-button @click="reset('paramsForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<el-table v-loading.body='loading' :data='userReferral.items' stripe height="550" :virtual-scrollbar='true' @sort-change="sort">
+			<el-table-column label='序号' align='center' width="60">
+            	<template slot-scope="scope">
+					{{(scope.$index + 1) + (userReferral.pageNo -1) * userReferral.pageSize}}
+				</template>
+	        </el-table-column>
+
+	        <el-table-column label='邀请时间' prop='referralTime' width="140" sortable='custom'>
+            	<template slot-scope="scope">
+	                {{scope.row.referralTime | dateFormat01}}
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="邀请人姓名" width="140">
+            	<template slot-scope="scope">
+	                <template v-if="scope.row.referrerNickname">{{scope.row.referrerNickname}}</template> 
+            		<router-link :to='{name: "customer-detail", params: {customerId: scope.row.referrerId}}' target='_blank'  class="lxgs-customer-name" v-track="{type: 'btn', metric: 'click', id: 'referral-customer:customer-detail'}">({{scope.row.referrerName}})</router-link>
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="邀请人手机号" width="120" prop="referrerPhone"></el-table-column>
+
+	        <el-table-column label="邀请人当前小职姐" width="140" prop="referrerAgentNickname"></el-table-column>
+	        <el-table-column width="130">
+	        	<template slot="header" slot-scope="scope">
+	        		<el-popover placement="left" title="邀请小职姐" width="100" trigger="click">
+        				<!-- 缩写展示按钮 -->
+            			<span slot="reference">
+            				邀请时小职姐 <i class="el-icon-question"></i>
+            			</span>
+            			<!-- 展开内容 -->
+            			<p>指被邀请人注册时邀请人当时的小职姐</p>
+            		</el-popover>
+	        	</template>
+	        	<template slot-scope="scope">{{scope.row.referralAgentNickname}}</template>
+	        </el-table-column>
+
+	        <el-table-column label="被邀请人姓名" width="140">
+            	<template slot-scope="scope">
+	                <template v-if="scope.row.refereeNickname">{{scope.row.refereeNickname}}</template> 
+            		<router-link :to='{name: "customer-detail", params: {customerId: scope.row.refereeId}}' v-if="scope.row.refereeId" target='_blank'  class="lxgs-customer-name" v-track="{type: 'btn', metric: 'click', id: 'referral-customer:customer-detail'}">({{scope.row.refereeName}})</router-link>
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="被邀请人手机号" width="140" prop="refereePhone"></el-table-column>
+
+	        <el-table-column label="被邀请人当前小职姐" width="150" prop="refereeAgentNickname"></el-table-column>
+
+	        <el-table-column label='被邀请人注册时间' prop='refereeSignUpTime' width="160" sortable='custom' align='center'>
+            	<template slot-scope="scope">
+	                {{scope.row.refereeSignUpTime | dateFormat01}}
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label='被邀请人签到时间' prop='refereeSignInTime' width="160" sortable='custom' align='center'>
+            	<template slot-scope="scope">
+	                {{scope.row.refereeSignInTime | dateFormat01}}
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label='被邀请人入职时间' prop='refereeOnboardingTime' min-width="160" sortable='custom' align='center'>
+            	<template slot-scope="scope">
+	                {{scope.row.refereeOnboardingTime | dateFormat02}}
+	            </template>
+	        </el-table-column>
+
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'params', 'page_size', 'getList')"
+		  		@current-change="handlePageChange($event, 'params', 'page_no', 'getList')"
+		  		:current-page='userReferral.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='userReferral.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='userReferral.totalCount'></el-pagination>
+		</div>
+	</div>
+
+</div>

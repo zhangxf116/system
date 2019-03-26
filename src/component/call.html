@@ -1,0 +1,13 @@
+<div class="lxgs-call">
+	<template v-if="shape === 'circle'">
+		<el-button type="primary" :icon="icon" circle size='medium' @click='call'>
+			<template v-if="text">{{text}}</template>
+		</el-button>
+	</template>
+
+	<template v-if="shape === 'round'">
+		<el-button type="primary" :icon="icon" round size='medium' @click='call'>
+			<template v-if="text">{{text}}</template>
+		</el-button>
+	</template>
+</div>

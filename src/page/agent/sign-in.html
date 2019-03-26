@@ -1,0 +1,101 @@
+<div class="lxgs-agent-sign-in">
+	<!-- 标题头 -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<!-- 导出 -->
+	<div class="action">
+		<el-button  type="primary" size='medium' @click="getExport" v-track="{type: 'btn', metric: 'click', id: 'online:export'}">导出表格</el-button>
+	</div>
+
+	<div class="lxgs-main-search">
+		<!-- 搜索 -->
+		<el-form ref="agentSignInForm" :model="params" :inline='true'>
+			<el-form-item prop='from'>
+				<el-date-picker v-model="params.from" type="date" :editable="false" value-format="timestamp" placeholder="开始时间"></el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop='to'>
+				<el-date-picker v-model="params.to" type="date" :editable="false" value-format="timestamp" placeholder="结束时间"></el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop='agent_id'>
+				<el-select v-model="params.agent_id" filterable placeholder="小职姐">
+					<el-option
+						v-for="(i, index) in agentList"
+						:key="index"
+						:label="i.nickname"
+						:value="i.agentId">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('agentSignInForm')" v-track="{type: 'btn', metric: 'click', id: 'online:search'}">查询</el-button>
+				<el-button @click="reset('agentSignInForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<el-table v-loading.body='loading' :data='agentSignIn.items' stripe height="580" :virtual-scrollbar='true'>
+
+			<el-table-column label='序号' align='center' width="65">
+            	<template slot-scope="scope">
+					{{(scope.$index + 1) + (agentSignIn.pageNo -1) * agentSignIn.pageSize}}
+				</template>
+            </el-table-column>
+
+	        <el-table-column
+	            label="时间"
+	            width="140">
+	            <template slot-scope="scope">
+	                {{scope.row.day  | dateFormat02}}
+	            </template>
+	        </el-table-column>
+
+	       	<el-table-column
+	        	prop='agentNickname'
+	            label="小职姐"
+	            width="100"></el-table-column>
+
+	        <el-table-column prop='supervisorNickname' label="主管" width="100"></el-table-column>
+
+	        <el-table-column
+	            label="上线时间"
+	            width="140">
+	            <template slot-scope="scope">
+	            	<span v-if="scope.row.goToWorkTime">{{scope.row.goToWorkTime  | dateFormat01}}</span>
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column
+	            label="下线时间"
+	            width="140">
+	            <template slot-scope="scope">
+	                <span v-if="scope.row.offWorkTime">{{scope.row.offWorkTime  | dateFormat01}}</span>
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column
+	            label='在线时长'>
+	            <template slot-scope="scope">
+	                <span v-if="scope.row.lengthOfWork">{{scope.row.lengthOfWork}}</span>
+	            </template>
+	        </el-table-column>
+	        
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'params', 'page_size', 'getList')"
+		  		@current-change="handlePageChange($event, 'params', 'page_no', 'getList')"
+		  		:current-page='agentSignIn.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='agentSignIn.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='agentSignIn.totalCount'></el-pagination>
+		</div>
+	</div>
+</div>

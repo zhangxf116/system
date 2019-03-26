@@ -1,0 +1,72 @@
+<div class="lxgs-fund-salary-release">
+	<!-- 标题头  -->
+	<h2 class="lxgs-main-title">
+		<router-link class="action" :to="{name: 'salary-sign', params: {userId: $route.params.userId}}" v-track="{type: 'btn', metric: 'click', id: 'daily-pay:sign-in'}">打卡记录</router-link> 
+		<router-link class="action" :to="{name: 'salary-release', params: {userId: $route.params.userId}}" v-track="{type: 'btn', metric: 'click', id: 'daily-pay:zx-pay'}">领周薪发放记录</router-link>
+		<span class="action">{{$route.meta.pageTitle}}</span>
+	</h2>
+
+	<!-- 客戶信息 -->
+	<div class="lxgs-main-content">
+		<ul class="customer-info clearfix">
+			<li>{{info.userName}}</li>
+		</ul>
+		<div class="time-filter">
+			<el-date-picker style="width: 270px;" v-model="timeRange" value-format="timestamp" type="daterange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" :picker-options="timeOption" @change="getTime"></el-date-picker>
+		</div>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<el-table
+			v-loading.body='loading'
+			element-loading-background="rgba(0, 0, 0, 0.6)"
+			:data='day.items'
+		    border height="520"
+		    :virtual-scrollbar='true'>
+
+		    <el-table-column label='考勤日期' width="140">
+				<template slot-scope="scope">
+					<span>{{scope.row.day}}</span>
+				</template>
+	        </el-table-column>
+
+	        <el-table-column label='发放类型' width="80">
+				<template slot-scope="scope">
+					<span>日日返</span>
+				</template>
+	        </el-table-column>
+
+	        <el-table-column label='岗位名称' width="160">
+				<template slot-scope="scope">
+					<span>{{scope.row.positionName}}</span>
+				</template>
+	        </el-table-column>
+
+	        <el-table-column label='日日返金额(元)' width="120" prop="amount"></el-table-column>
+
+	        <el-table-column label='状态' width="100"><template slot-scope="scope"><span>{{scope.row.status | dayReleaseStatus}}</span></template></el-table-column>
+
+	        <el-table-column label='说明' prop="comment">
+	        	<template slot-scope="scope">
+	        		<span v-if="scope.row.status == 6">
+	        			{{scope.row.paymentTime | dateFormat01}} 提现成功 银行卡尾号 {{scope.row.bankCard}}
+	        		</span>
+	        		<span>{{scope.row.comment}}</span>
+	        	</template>
+	        </el-table-column>
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'params', 'page_size', 'getList')"
+		  		@current-change="handlePageChange($event, 'params', 'page_no', 'getList')"
+		  		:current-page='day.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='day.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='day.totalCount'></el-pagination>
+		</div>
+	</div>
+</div>

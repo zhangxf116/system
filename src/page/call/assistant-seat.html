@@ -1,0 +1,142 @@
+<div class="lxgs-call-seat">
+	<!-- 标题头 -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<div class="lxgs-main-search">
+		<!-- 搜索 -->
+		<el-form ref="callSeatForm" :model='params' :inline='true'>
+			<el-form-item prop='seat_id'>
+				<el-select v-model="params.seat_id" filterable placeholder="小职姐助理">
+					<el-option
+						v-for="(i, index) in agentAssistantList"
+						:key="index"
+						:label="i.name"
+						:value="i.assistantId">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='ext_no'>
+				<el-select v-model="params.ext_no" filterable placeholder="分机号" @visible-change="getSipPhoneList($event, true)">
+					<el-option
+						v-for="(i, index) in sipPhoneList"
+						:key="index"
+						:label="i"
+						:value="i">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('callSeatForm')" v-track="{type: 'btn', metric: 'click', id: 'assistant-manager-call-seat:search'}">查询</el-button>
+				<el-button @click="reset('callSeatForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<!-- 添加坐席 -->
+		<div class="add-seat">
+			<el-button type="primary" icon="el-icon-plus" @click='isShowAddSeat = true' v-track="{type: 'btn', metric: 'click', id: 'assistant-manager-call-seat:add'}">添加坐席</el-button>
+		</div>
+
+		<el-table v-loading.body='loading' :data='seat.items' stripe height="580" :virtual-scrollbar='true'>
+
+			<el-table-column label='序号' align='center' width="65">
+            	<template slot-scope="scope">
+					{{(scope.$index + 1) + (seat.pageNo -1) * seat.pageSize}}
+				</template>
+	        </el-table-column>
+
+	        <el-table-column prop='nickname' label="小职姐助理" width="110"></el-table-column>
+
+	        <el-table-column prop='jobNo' label="工号" width="110"></el-table-column>
+
+	        <el-table-column prop='extNo' label="分机号" width="110"></el-table-column>
+
+
+	       	<el-table-column label="操作">
+            	<template slot-scope="scope">
+            		<el-button type="danger" size='mini' @click='deletSeat(scope.row.seatId, scope.row.nickname)' v-track="{type: 'btn', metric: 'click', id: 'assistant-manager-call-seat:delete'}">删除坐席</el-button>
+	           		<el-button type="primary" size='mini' @click='showEditSeat(scope.row.seatId, scope.row.nickname, scope.row.extNo, scope.row.jobNo)' v-track="{type: 'btn', metric: 'click', id: 'assistant-manager-call-seat:edit'}">编辑</el-button>
+	           		<el-button type="warning" size='mini' v-if='scope.row.extNo' @click='unbindSeat(scope.row.seatId, scope.row.nickname)' v-track="{type: 'btn', metric: 'click', id: 'assistant-manager-call-seat:unbind'}">解绑</el-button>
+	            </template>
+	        </el-table-column>
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'params', 'page_size', 'getList')"
+		  		@current-change="handlePageChange($event, 'params', 'page_no', 'getList')"
+		  		:current-page='seat.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='seat.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='seat.totalCount'></el-pagination>
+		</div>
+	</div>
+
+	<!-- 弹出框：添加坐席 -->
+	<el-dialog
+		title="添加坐席"
+		:visible.sync="isShowAddSeat"
+		:show-close="false"
+		width="35%">
+		<el-form ref="addSeatForm" :model="addSeatData" :inline-message='true' :rules='addSeatDataRules' label-width='120px'>
+			<el-form-item prop='seatId' label="小职姐助理：">
+				<el-select v-model="addSeatData.seatId" filterable placeholder="请选择小职姐助理">
+					<el-option
+						v-for="(i, index) in agentAssistantList"
+						:key="index"
+						:label="i.name"
+						:value="i.assistantId">
+						</el-option>
+				</el-select>
+			</el-form-item>
+			<el-form-item prop='extNo' label="分机号：">
+				<el-select v-model="addSeatData.extNo" filterable placeholder="请选择分机号" @visible-change="getSipPhoneList($event, false)">
+					<el-option
+						v-for="(i, index) in sipPhoneList"
+						:key="index"
+						:label="i"
+						:value="i">
+						</el-option>
+				</el-select>
+			</el-form-item>
+		</el-form>
+
+		<span slot="footer" class="dialog-footer">
+			<el-button @click="isShowAddSeat = false">取 消</el-button>
+			<el-button type="primary" @click="addSeat('addSeatForm')">确 定</el-button>
+		</span>
+	</el-dialog>
+
+	<!-- 弹出框：编辑坐席 -->
+	<el-dialog
+		title="编辑坐席"
+		:visible.sync="isShowEditSeat"
+		:show-close="false"
+		width="35%">
+		<el-form ref="editSeatForm" :model="editSeatData" :rules='editSeatDataRules' label-width='120px'>
+			<el-form-item label="小职姐助理：">{{editSeatTemporaryData.nickname}}</el-form-item>
+			<el-form-item prop='extNo' label="分机号：">
+				<el-select v-model="editSeatData.extNo" filterable placeholder="请选择分机号" @visible-change="getSipPhoneList($event, false)">
+					<el-option
+						v-for="(i, index) in sipPhoneList"
+						:key="index"
+						:label="i"
+						:value="i">
+						</el-option>
+				</el-select>
+			</el-form-item>
+			<el-form-item label="工号：">{{editSeatTemporaryData.jobNo}}</el-form-item>
+		</el-form>
+
+		<span slot="footer" class="dialog-footer">
+			<el-button @click="isShowEditSeat = false">取 消</el-button>
+			<el-button type="primary" @click="editSeat('editSeatForm')">确 定</el-button>
+		</span>
+	</el-dialog>
+</div>

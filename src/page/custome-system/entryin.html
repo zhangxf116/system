@@ -1,0 +1,117 @@
+<div class="lxgs-custome-system">
+    <h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+    <div class="lxgs-main-search">
+        <el-form ref="entryForm" :model='entryData' :inline='true'>
+            <el-form-item prop='timeRange'>
+                <el-date-picker
+                        v-model="timeRange"
+                        value-format="timestamp"
+                        type="daterange"
+                        range-separator="至"
+                        start-placeholder="开始时间" end-placeholder="结束时间"
+                        @change="getTime"></el-date-picker>
+            </el-form-item>
+
+            <el-form-item>
+                <el-button type="primary" @click="search()" v-track="{type: 'btn', metric: 'click', id: 'service-entry-customer:serach'}">查询</el-button>
+                <el-button @click="reset()">重置</el-button>
+            </el-form-item>
+        </el-form>
+    </div>
+
+    <div class="tab lxgs-main-tab-wrapper">
+        <el-tabs type="border-card" v-model="tabChange" @tab-click="handleClick">
+            <el-tab-pane name="1">
+                <span slot="label" v-track="{type: 'btn', metric: 'click', id: 'service-entry-customer:no-claim'}">未认领<span>（{{entryin.totalCount}}）</span></span>
+            </el-tab-pane>
+            <el-tab-pane name="2">
+                <span slot="label" v-track="{type: 'btn', metric: 'click', id: 'service-entry-customer:claim'}">已认领<span>（{{entryinClaim.totalCount}}）</span></span>
+            </el-tab-pane>
+            <el-tab-pane name="3">
+                <span slot="label" v-track="{type: 'btn', metric: 'click', id: 'service-entry-customer:complete'}">已完成<span>（{{entryinComplete.totalCount}}）</span></span>
+            </el-tab-pane>
+        </el-tabs>
+
+        <div class="table">
+            <el-checkbox-group v-model="checkedUserStatuses" @change="handleCheckedChange" v-show="noclaimBtnShow">
+                <el-checkbox v-for="user in userStatuses" :label="user.label" :key="user.label">{{user.value}}</el-checkbox>
+            </el-checkbox-group>
+
+            <el-table :data="entryin.items" v-loading.body='loading' stripe height="580" :virtual-scrollbar='true'>
+                <el-table-column type="index" width="90" label="序号"></el-table-column>
+                <el-table-column prop="enterTime" label="入职时间">
+                    <template slot-scope="scope">{{scope.row.enterTime | dateFormat02}}</template>
+                </el-table-column>
+                <el-table-column prop="userName" label="客户姓名" width="120"></el-table-column>
+                <el-table-column prop="companyName" label="入职企业"></el-table-column>
+                <el-table-column prop="positionName" label="岗位"></el-table-column>
+                <el-table-column prop="agentName" label="小职姐姓名"></el-table-column>
+                <el-table-column prop="userStatus" label="当前状态">
+                    <template slot-scope="scope">
+                        {{scope.row.userStatus | userStatusMap}}
+                    </template>
+                </el-table-column>
+
+                <el-table-column label="操作" width="240">
+                    <template slot-scope='scope'>
+                        <el-button @click="claim(scope.row)" type="primary" size="small" v-show="claimBtnShow" v-track="{type: 'btn', metric: 'click', id: 'service-entry-customer:no-claim:claim'}">认领</el-button>
+                        <div v-show="noclaimBtnShow">
+                            <lxgs-call :user-id="scope.row.userId.toString()" v-track="{type: 'btn', metric: 'click', id: 'service-entry-customer:call'}"></lxgs-call>
+                            <el-button  @click="visit(scope.row)" type="primary" size="small" v-track="{type: 'btn', metric: 'click', id: 'service-entry-customer:return-visit'}">回访</el-button>
+                            <el-button @click="visitRecord(scope.row)" type="primary" size="small" v-track="{type: 'btn', metric: 'click', id: 'service-entry-customer:return-visit-record'}">回访记录</el-button>
+                        </div>
+                    </template>
+                </el-table-column>
+            </el-table>
+
+            <div class='lxgs-main-pagination'>
+                <el-pagination
+                    @size-change="handlePageChange($event, 'entryData', 'page_size', 'getEntryinData')"
+                    @current-change="handlePageChange($event, 'entryData', 'page_no', 'getEntryinData')"
+                    :current-page='entryin.pageNo'
+                    :page-sizes="pageSizes"
+                    :page-size='entryin.pageSize'
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total='entryin.totalCount'></el-pagination>
+            </div>
+        </div>
+    </div>
+
+    <!--回访弹框-->
+    <el-dialog title="回访" :visible.sync="dialogVisible" width="30%">
+        <el-radio-group v-model="radioUserStatus">
+            <el-radio :label="1">未接通</el-radio>
+            <el-radio :label="2">在职</el-radio>
+            <el-radio :label="3">离职</el-radio>
+        </el-radio-group>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="dialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="visitSure">确 定</el-button>
+        </span>
+    </el-dialog>
+
+    <!--回访记录弹框-->
+    <el-dialog title="回访记录" :visible.sync="dialogRecordVisible" width="40%">
+        <div class="visit">
+            <div>
+                <el-input type="textarea" :autosize="{ minRows: 16, maxRows: 5}" placeholder="请输入回访内容" v-model="visitRecordText" :maxlength=200 style="width: 180px;"></el-input>
+                <p>剩余{{200 - visitRecordText.length}}字</p>
+            </div>
+            <div class="visit-history">
+                <h4>回访历史</h4>
+                <ol reversed>
+                    <li v-for="item in historyList" :key="item.createTime">
+                        <div class="visit-time">{{item.createTime | dateFormat02}}</div>
+                        <div>{{item.comment}}</div>
+                    </li>
+                </ol>
+            </div>
+        </div>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="dialogRecordVisible = false">取 消</el-button>
+            <el-button type="primary" @click="visitRecordSure">确 定</el-button>
+        </span>
+    </el-dialog>
+
+</div>

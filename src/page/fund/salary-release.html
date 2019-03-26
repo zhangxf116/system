@@ -1,0 +1,64 @@
+<div class="lxgs-fund-salary-release">
+	<!-- 标题头  -->
+	<h2 class="lxgs-main-title">
+		<router-link class="action" :to="{name: 'salary-sign', params: {userId: $route.params.userId}}" v-track="{type: 'btn', metric: 'click', id: 'zx-pay:sign-in'}">打卡记录</router-link>
+		<span class="action">{{$route.meta.pageTitle}}</span>
+		<router-link class="action" :to="{name: 'day-release', params: {userId: $route.params.userId}}" v-track="{type: 'btn', metric: 'click', id: 'zx-pay:daily-pay'}">日日返发放记录</router-link>
+	</h2>
+
+	<!-- 客戶信息 -->
+	<div class="lxgs-main-content">
+		<ul class="customer-info clearfix">
+			<li>{{info.userName}}</li>
+			<li>工资卡：{{info.salaryCardBank}} {{info.salaryCard}}</li>
+			<li>设备号：{{info.deviceId}}</li>
+		</ul>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<el-table
+			v-loading.body='loading'
+			element-loading-background="rgba(0, 0, 0, 0.6)"
+			:data='payment.items'
+		    border height="520"
+		    :virtual-scrollbar='true'>
+
+		    <el-table-column label='日期' width="140">
+				<template slot-scope="scope">
+					<span>{{scope.row.day | dateFormat01}}</span>
+				</template>
+	        </el-table-column>
+
+	        <el-table-column label='工资类型' width="80">
+				<template slot-scope="scope">
+					<span>{{scope.row.type | salaryReleaseType}}</span>
+				</template>
+	        </el-table-column>
+
+	        <el-table-column label="金额" width="90" prop="amount"></el-table-column>
+
+	        <el-table-column label="工资卡" width="200"><template slot-scope="scope"><span>{{scope.row.salaryCardBank}}</span> <span>{{scope.row.salaryCard}}</span></template></el-table-column>
+
+	        <el-table-column label='发放时间' width="140"><template slot-scope="scope"><span>{{scope.row.paymentTime | dateFormat01}}</span></template></el-table-column>
+
+	        <el-table-column label='发放状态' width="80"><template slot-scope="scope"><span>{{scope.row.status | salaryReleaseStatus}}</span></template></el-table-column>
+
+	        <el-table-column label='结算周期' width="170"><template slot-scope="scope">{{scope.row.from | dateFormat03}}-{{scope.row.to | dateFormat03}}</template></el-table-column>
+
+	        <el-table-column label='说明' prop="comment"></el-table-column>
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'salaryReleaseData', 'page_size', 'getSalaryReleaseList')"
+		  		@current-change="handlePageChange($event, 'salaryReleaseData', 'page_no', 'getSalaryReleaseList')"
+		  		:current-page='payment.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='payment.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='payment.totalCount'></el-pagination>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,233 @@
+<div class="lxgs-position-list">
+	<!-- 标题头  -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<!-- 搜索 -->
+	<div class="lxgs-main-search">
+		<el-form :inline="true" ref="positionForm" :model="positionData">
+			<el-form-item prop='companyShortName'>
+				<el-input type='text' placeholder='请输入企业简称' v-model.trim='positionData.companyShortName'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='positionName'>
+				<el-input type='text' placeholder='请输入岗位名称' v-model.trim='positionData.positionName'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='cityId'>
+				<el-select v-model="positionData.cityId" placeholder="请选择工作城市">
+					<el-option
+						v-for="(i, index) in cityList"
+						:key="index"
+						:label="i.name"
+						:value="i.id">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='zx'>
+				<el-select v-model="positionData.zx" placeholder="是否选择周薪">
+					<el-option label="是" :value="true"></el-option>
+					<el-option label="否" :value="false"></el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='timeRange'>
+				<el-date-picker v-model="positionData.timeRange" type="daterange" :default-time="['00:00:00', '23:59:59']" value-format="timestamp" start-placeholder="请选择面试时间起" end-placeholder="请选择面试时间止" @change="getTime('positionData', 'timeRange', 'interviewDateFrom', 'interviewDateTo')"></el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop='status'>
+				<el-select v-model="positionData.status" placeholder="请选择岗位状态">
+					<el-option label="上线" value="1"></el-option>
+					<el-option label="下线" value="0"></el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('positionForm')" v-track="{type: 'btn', metric: 'click', id: 'position-list:search'}">查询</el-button>
+				<el-button @click="reset('positionForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+
+		<el-form label-width='85px'>
+			<el-form-item label='岗位特征：'>
+				<el-tag v-for="(i, index) in selectFeatures" :key="index" closable :disable-transitions="false" style="margin-right: 10px;" @close="tagEvent(index)">{{i.name}}</el-tag>
+				<el-button type="primary" icon="el-icon-plus" @click='isShowFeaturePop = true' v-track="{type: 'btn', metric: 'click', id: 'position-list:search-feature'}"></el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<el-table
+			v-loading.body='loading'
+			element-loading-background="rgba(0, 0, 0, 0.6)"
+			:data='position.items'
+		    height="540"
+		    :virtual-scrollbar='true'>
+
+		    <el-table-column type="expand">
+				<template slot-scope="scope">
+					<el-form label-position="left" class="position-expand">
+						<el-form-item label="岗位特征：">
+							<el-tag v-for='(i, index) in scope.row.positionFeatures' :key="index" style="margin-right: 10px;">{{i}}</el-tag>
+						</el-form-item>
+						<el-form-item label="任职要求：">
+							<pre v-html="scope.row.requirement"></pre>
+						</el-form-item>
+						<el-form-item label="面试要求：">
+							<pre v-html="scope.row.interviewRequirements"></pre>
+						</el-form-item>
+						<el-form-item label="注意事项：">
+							<pre v-html="scope.row.notice"></pre>
+						</el-form-item>
+						<el-form-item label="隐私描述：">
+							<pre v-html="scope.row.privateInfo"></pre>
+						</el-form-item>
+					</el-form>
+				</template>
+			</el-table-column>
+
+            <el-table-column
+	        	prop='companyShortName'
+	            label="企业简称"
+	            width='140'></el-table-column>
+
+	        <el-table-column label="岗位名称" width='140'>
+	        	<template slot-scope="scope">
+					<router-link :to='{name: "position-detail", params: {positionId: scope.row.positionId, positionName: scope.row.positionName}}' target='_blank' v-track="{type: 'btn', metric: 'click', id: 'position-list:position-detail'}">{{scope.row.positionName}}</router-link>
+		        </template>    	
+	        </el-table-column>
+
+	        <el-table-column
+	            label="综合工资"
+	            width='100'>
+	            	<template slot-scope="scope">
+		                {{scope.row.minSalary}} - {{scope.row.maxSalary}}
+		            </template>
+	            </el-table-column>
+
+	        <el-table-column label="岗位特性" width="90">
+            	<template slot-scope="scope">
+					<span v-for="i in scope.row.positionTypes">{{i}}</span>
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="预报名" width="90">
+            	<template slot-scope="scope">
+					<strong class="lxgs-red" v-if="scope.row.preReserve === true">是</strong>
+	            </template>
+	        </el-table-column>
+
+			<el-table-column label="招聘需求" header-align='center'>
+				<el-table-column label="面试时间" width="140"">
+					<template slot-scope="scope">
+						<span class="interview-date-list" v-for="i in scope.row.recruitmentNeeds">
+							{{i.interviewDate | dateFormat01}}
+						</span>
+		            </template>
+				</el-table-column>
+
+				
+				<el-table-column label="接站信息" min-width="140">
+					<template slot-scope="scope">
+		            	<span class="address" v-for="i in scope.row.recruitmentNeeds">
+		            		<el-popover placement="left" title="接站信息" width="200" trigger="hover">
+		            			<template v-for='ii in i.pickUpAddresses'>
+		            				<!-- 缩写展示按钮 -->
+			            			<span v-if="ii.location" slot="reference">{{ii.location}} {{ii.time | dateFormat01}}</span>
+			            			<!-- 展开内容 -->
+			            			<p>{{ii.location}} {{ii.time | dateFormat01}}</p>
+			            		</template>
+		            		</el-popover>
+		            	</span>
+		            </template>
+				</el-table-column>
+
+				<el-table-column label="收费金额" width="100">
+		            <template slot-scope="scope">
+		            	<span class="awards" v-for="i in scope.row.recruitmentNeeds">
+		            		<el-popover placement="left" title="收费金额明细" width="200" trigger="hover">
+	            				<!-- 缩写展示按钮 -->
+		            			<span v-if="i.userMaleToll || i.userFemaleToll" slot="reference">男{{i.userMaleToll}} 女{{i.userFemaleToll}}</span>
+		            			<!-- 展开内容 -->
+		            			<p>男{{i.userMaleToll}}：代收劳务公司管理费{{i.laborMaleToll}}，平台收费{{i.platformMaleToll}}，平台补贴{{i.platformMaleSubsidyToll}}</p>
+		            			<p>女{{i.userFemaleToll}}：代收劳务公司管理费{{i.laborFemaleToll}}，平台收费{{i.platformFemaleToll}}，平台补贴{{i.platformFemaleSubsidyToll}}</p>
+		            		</el-popover>
+		            	</span>
+		            </template>
+		        </el-table-column>
+
+				<el-table-column label="入职奖励" width="200">
+		            <template slot-scope="scope">
+		            	<span class="awards" v-for="i in scope.row.recruitmentNeeds">
+		            		<el-popover placement="left" title="入职奖励" width="200" trigger="hover">
+		            			<template v-for='ii in i.returnConditions'>
+		            				<!-- 缩写展示按钮 -->
+			            			<span v-if="ii.condition" slot="reference">{{ii.condition}} 男{{ii.userMaleFee}} 女{{ii.userFemaleFee}}</span>
+			            			<!-- 展开内容 -->
+			            			<p>{{ii.condition}} 男{{ii.userMaleFee}} 女{{ii.userFemaleFee}}</p>
+			            		</template>
+		            		</el-popover>
+		            	</span>
+		            </template>
+		        </el-table-column>
+
+		        <el-table-column label="提成" width="150">
+		            <template slot-scope="scope">
+		            	<span class="awards" v-for="i in scope.row.recruitmentNeeds">
+		            		<el-popover placement="left" title="提成明细" width="200" trigger="hover">
+	            				<!-- 缩写展示按钮 -->
+		            			<span slot="reference" v-if="i.onboardingReward || i.workingReward || i.rewardDeadline">
+		            				<span v-if="i.onboardingReward">入职提成金额：{{i.onboardingReward}}，</span>
+			            			<span v-if="i.workingReward">在职提成金额：{{i.workingReward}}，</span>
+			            			<span v-if='i.rewardDeadline'>提成截止日期：{{i.rewardDeadline | dateFormat02}}</span>
+		            			</span>
+		            			<!-- 展开内容 -->
+		            			<p v-if="i.onboardingReward">入职提成金额：{{i.onboardingReward}}</p>
+		            			<p v-if="i.workingReward">在职提成金额：{{i.workingReward}}</p>
+		            			<p v-if='i.rewardDeadline'>提成截止日期：{{i.rewardDeadline | dateFormat02}}</p>
+		            		</el-popover>
+		            	</span>
+		            </template>
+		        </el-table-column>
+			</el-table-column>
+
+	        <el-table-column label="状态" width="55">
+	            <template slot-scope="scope">
+	                <span>{{scope.row.status | jobStatusMap}}</span>
+	            </template>
+	        </el-table-column>
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'positionData', 'pageSize', 'getEnterprisePostionList')"
+		  		@current-change="handlePageChange($event, 'positionData', 'pageNo', 'getEnterprisePostionList')"
+		  		:current-page='position.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='position.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='position.totalCount'></el-pagination>
+		</div>
+	</div>
+
+	<!-- 岗位特征 Popup -->
+	<el-dialog title="岗位特征高级筛选" :visible.sync="isShowFeaturePop" width="80%" :fullscreen="true">
+		<el-form label-width='100px'>
+			<el-form-item>
+				<el-tag v-for="(i, index) in selectFeatures" :key="index" closable :disable-transitions="false" style="margin-right: 10px;" @close="tagEvent(index)">{{i.name}}</el-tag>
+			</el-form-item>
+			<el-form-item v-for="(i, index0) in feature" :label='i.name' :key="index0">
+				<el-checkbox-group v-model="selectFeatures" size="small">
+					<el-checkbox v-for='(ii, index) in i.features' :key="index" :label="ii" border size="mini" @change="featureEvent(ii, i.name)">{{ii.name}}</el-checkbox>
+				</el-checkbox-group>
+			</el-form-item>
+		</el-form> 
+
+		<span slot="footer" class="dialog-footer">
+			<el-button @click="resetFeature">重 置</el-button>
+			<el-button type="primary" @click="isShowFeaturePop = false">确 定</el-button>
+		</span>
+	</el-dialog>
+</div>

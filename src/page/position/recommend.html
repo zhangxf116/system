@@ -1,0 +1,240 @@
+<div class="lxgs-position-recommend">
+	<!-- 标题头  -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<!-- 返回 -->
+	<div class="action" v-if="$route.query.from != 'return-visit'">
+		<el-button type="primary" plain size='medium' @click="back" v-track="{type: 'btn', metric: 'click', id: 'recommend-position-list:back'}">返回</el-button>
+	</div>
+
+	<!-- 客戶信息 -->
+	<div class="lxgs-main-content">
+		<ul class="customer-info clearfix">
+			<li v-if='info.userName'>{{info.userName}} ({{info.sex | customerSexMap}})</li>
+			<li v-if='info.idCardVerified'>已实名认证：{{info.age}}岁，{{info.constellation}}，{{info.minzu}}</li>
+			<li v-if='info.jiguan'>家乡：{{info.jiguan}}</li>
+		</ul>
+
+		<!-- 搜索 -->
+		<el-form ref="positionForm" :model="positionData" :inline="true">
+			<el-form-item prop='positionName'>
+				<el-input type='text' placeholder='请输入岗位名称' v-model.trim='positionData.positionName'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='cityId'>
+				<el-select v-model="positionData.cityId" placeholder="请选择工作城市">
+					<el-option
+						v-for="(i, index) in cityList"
+						:key="index"
+						:label="i.name"
+						:value="i.id">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='timeRange'>
+				<el-date-picker
+					v-model="positionData.timeRange"
+					type="daterange"
+					value-format="timestamp"
+					range-separator="-"
+					start-placeholder="请选择面试时间起"
+					end-placeholder="请选择面试时间止"
+					@change="getTime('positionData', 'timeRange', 'interviewDateFrom', 'interviewDateTo')">
+					</el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop='salary'>
+				<el-input type='text' placeholder='请输入期望工资' v-model.trim='positionData.salary'></el-input>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('positionForm')" v-track="{type: 'btn', metric: 'click', id: 'recommend-position-list:search'}">查询</el-button>
+				<el-button @click="reset('positionForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+
+		<el-form label-width='85px'>
+			<el-form-item label='快速查询：'>
+				<el-radio v-for='(i, index) in positionTypeList' v-model="positionData.positionListType" :key="index" :label="i.key" border size="mini" @change="getPostionList">
+					<span v-track="{type: 'btn', metric: 'click', id: 'recommend-position-list:search-' + i.key}">{{i.value}}</span>
+				</el-radio>
+			</el-form-item>
+		</el-form>
+
+		<el-form label-width='85px'>
+			<el-form-item label='岗位特征：'>
+				<el-tag v-for="(i, index) in selectFeatures" :key="index" closable :disable-transitions="false" style="margin-right: 10px;" @close="tagEvent(index)">{{i.name}}</el-tag>
+				<el-button type="primary" icon="el-icon-plus" @click='isShowFeaturePop = true' v-track="{type: 'btn', metric: 'click', id: 'recommend-position-list:search-feature'}"></el-button>
+			</el-form-item>
+		</el-form>
+	</div>	
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list" >
+		<el-table
+			v-loading.body='loading'
+			element-loading-background="rgba(0, 0, 0, 0.6)"
+			:data='position.items'
+		    height="470"
+		    :row-class-name="tableRowClassName"
+		    :virtual-scrollbar='true'>
+
+		    <el-table-column type="expand">
+				<template slot-scope="scope">
+					<el-form label-position="left" class="position-expand">
+						<el-form-item label="岗位特征：">
+							<el-tag v-for='(i, index) in scope.row.positionFeatures' :key="index" style="margin-right: 10px;">{{i}}</el-tag>
+						</el-form-item>
+					</el-form>
+				</template>
+			</el-table-column>
+
+            <el-table-column label="岗位名称" min-width="200">
+            	<template slot-scope="scope">
+					<router-link :to='{name: "position-detail", params: {positionId: scope.row.positionId, positionName: scope.row.positionName}, query: {userId: $route.params.customerId, sex: info.sex, needRecommend: !scope.row.applied, recruitmentNeedsId: scope.row.recruitmentNeedsId}}' target='_blank' v-track="{type: 'btn', metric: 'click', id: 'recommend-position-list:position-detail'}">{{scope.row.positionName}}</router-link>
+				</template>
+	        </el-table-column>
+
+	        <el-table-column prop='city' label="工作城市"></el-table-column>
+
+	        <el-table-column label="工资" min-width="100">
+            	<template slot-scope="scope">
+	                {{scope.row.minSalary}} - {{scope.row.maxSalary}}
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="岗位特性" width="90">
+            	<template slot-scope="scope">
+					<span v-for="i in scope.row.positionTypes">{{i}}</span>
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="预报名" width="90">
+            	<template slot-scope="scope">
+					<strong class="lxgs-red" v-if="scope.row.preReserve === true">是</strong>
+	            </template>
+	        </el-table-column>
+
+			<el-table-column label="招聘需求" header-align='center'>				
+				<el-table-column label="面试时间" width="140">
+					<template slot-scope="scope">
+						<span class="interview-date-list" :class="i.configuredReturnFee ? '' : 'no-return-fee'" v-for="i in scope.row.recruitmentNeeds">{{i.interviewDate | dateFormat01}}</span>
+		            </template>
+				</el-table-column>
+
+				<el-table-column label="接站信息" width="140">
+					<template slot-scope="scope">
+		            	<span class="address" v-for="i in scope.row.recruitmentNeeds">
+		            		<el-popover placement="left" title="接站信息" width="200" trigger="hover">
+		            			<template v-for='ii in i.pickUpAddresses'>
+		            				<!-- 缩写展示按钮 -->
+			            			<span v-if="ii.location" slot="reference">{{ii.location}} {{ii.time | dateFormat01}}</span>
+			            			<!-- 展开内容 -->
+			            			<p>{{ii.location}} {{ii.time | dateFormat01}}</p>
+			            		</template>
+		            		</el-popover>
+		            	</span>
+		            </template>
+				</el-table-column>
+
+				<el-table-column label="收费金额" width="100">
+		            <template slot-scope="scope">
+		            	<span class="awards" v-for="i in scope.row.recruitmentNeeds">
+		            		<el-popover placement="left" title="收费金额明细" width="200" trigger="hover">
+	            				<!-- 缩写展示按钮 -->
+		            			<span v-if="i.userMaleToll || i.userFemaleToll" slot="reference">男{{i.userMaleToll}} 女{{i.userFemaleToll}}</span>
+		            			<!-- 展开内容 -->
+		            			<p>男{{i.userMaleToll}}：代收劳务公司管理费{{i.laborMaleToll}}，平台收费{{i.platformMaleToll}}，平台补贴{{i.platformMaleSubsidyToll}}</p>
+		            			<p>女{{i.userFemaleToll}}：代收劳务公司管理费{{i.laborFemaleToll}}，平台收费{{i.platformFemaleToll}}，平台补贴{{i.platformFemaleSubsidyToll}}</p>
+		            		</el-popover>
+		            	</span>
+		            </template>
+		        </el-table-column>
+
+				<el-table-column label="入职奖励" width="200">
+		            <template slot-scope="scope">
+		            	<span class="awards" v-for="i in scope.row.recruitmentNeeds">
+		            		<el-popover placement="left" title="入职奖励" width="200" trigger="hover">
+		            			<template v-for='ii in i.returnConditions'>
+		            				<!-- 缩写展示按钮 -->
+			            			<span v-if="ii.condition" slot="reference">{{ii.condition}} 男{{ii.userMaleFee}} 女{{ii.userFemaleFee}}</span>
+			            			<!-- 展开内容 -->
+			            			<p>{{ii.condition}} 男{{ii.userMaleFee}} 女{{ii.userFemaleFee}}</p>
+			            		</template>
+		            		</el-popover>
+		            	</span>
+		            </template>
+		        </el-table-column>
+			</el-table-column>
+
+	        <el-table-column
+				label="操作"
+				width="70">
+					<template slot-scope="scope">
+		                <el-button type="text" size="medium" @click="jobReserve(scope.row.applyId, scope.row.positionId, scope.row.positionName, scope.row.positionTypes, scope.row.preReserve)" v-if="!scope.row.applied" v-track="{type: 'btn', metric: 'click', id: 'recommend-position-list:reserve'}">推荐</el-button>
+		                <span v-else>已推荐</span>
+		            </template>
+			</el-table-column>
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'positionData', 'pageSize', 'getPostionList')"
+		  		@current-change="handlePageChange($event, 'positionData', 'pageNo', 'getPostionList')"
+		  		:current-page='position.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='position.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='position.totalCount'></el-pagination>
+		</div>
+	</div>
+
+	<!-- 岗位预约 Popup -->
+	<el-dialog title="预约" :visible.sync="isShowReservePop" width="32%" class='reserve-pop'>
+		<!-- 预约 -->
+		<el-form label-width='150px' ref="reserve" :model='reserveData' :rules='reserveRules'>
+			<el-form-item label='请选择约用户去哪' prop='pickUpLocation'>
+				<el-select v-model="reserveData.pickUpLocation" placeholder="请选择约用户去哪里" @change="setPickupAddress">
+					<el-option v-for="(i, index) in pickupLocation" :key="index" :label="i.location" :value="i"></el-option>
+				</el-select>
+			</el-form-item>
+			<el-form-item label='请先选择约到哪天' prop='pickUpTime'>
+				<el-select v-model="reserveData.pickUpTime" placeholder="请先选择约到哪天" :disabled="!reserveData.pickUpLocation" @change="getToll">
+					<el-option v-for="(i, index) in pickupDate" :key="index" :label="i | dateFormat01" :value="i"></el-option>
+				</el-select>
+			</el-form-item>
+		</el-form>
+
+		<p v-if='reserveData.pickUpTime' style="font-size: 16px; padding: 0 26px;">预约 {{info.userName}} {{reserveData.pickUpTime | dateFormat01}} 到达 {{reserveData.pickUpLocation}}, 详细地址：{{reserveData.pickUpAddress}}</p>
+
+		<p v-if='reserveData.pickUpTime && (toll.userMaleToll || toll.userFemaleToll)' style="font-size: 16px; padding: 0 26px; color: #F56C6C;">温馨提示：该岗位需支付费用，男{{toll.userMaleToll}}元，女{{toll.userFemaleToll}}元，请提醒用户在APP上付费</p>
+
+		<p v-if='info.idCardVerified === false && isPreReserve === true'>需预报名提示：该岗位是预报名岗位，请协助客户进行实名认证</p>
+
+		<span slot="footer" class="dialog-footer">
+			<el-button @click="closeReservePop">取 消</el-button>
+			<el-button type="primary" @click='submitReserve("reserve")'>确 定</el-button>
+		</span>
+	</el-dialog>
+
+	<!-- 岗位特征 Popup -->
+	<el-dialog title="岗位特征高级筛选" :visible.sync="isShowFeaturePop" width="80%" :fullscreen="true">
+		<el-form label-width='100px'>
+			<el-form-item>
+				<el-tag v-for="(i, index) in selectFeatures" :key="index" closable :disable-transitions="false" style="margin-right: 10px;" @close="tagEvent(index)">{{i.name}}</el-tag>
+			</el-form-item>
+			<el-form-item v-for="(i, index0) in feature" :label='i.name' :key="index0">
+				<el-checkbox-group v-model="selectFeatures" size="small">
+					<el-checkbox v-for='(ii, index) in i.features' :key="index" :label="ii" border size="mini" @change="featureEvent(ii, i.name)">{{ii.name}}</el-checkbox>
+				</el-checkbox-group>
+			</el-form-item>
+		</el-form> 
+
+		<span slot="footer" class="dialog-footer">
+			<el-button @click="resetFeature">重 置</el-button>
+			<el-button type="primary" @click="isShowFeaturePop = false" v-track="{type: 'btn', metric: 'click', id: 'recommend-position-list:search-feature:submit'}">确 定</el-button>
+		</span>
+	</el-dialog>
+</div>

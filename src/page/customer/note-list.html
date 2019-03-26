@@ -1,0 +1,47 @@
+<div class="lxgs-customer-note-list">
+	<!-- 标题头  -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+	
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list" style="margin-top: -1px;">
+		<el-table v-loading.body='loading' :data='record.items' stripe height="640" :virtual-scrollbar='true'>
+
+			<el-table-column
+	            label='日期'
+	            width="140">
+	            	<template slot-scope="scope">
+		                {{scope.row.updateTime | dateFormat01}}
+		            </template>
+	            </el-table-column>
+
+			<el-table-column
+				prop='operatorName'
+				label="注记人"
+				width="90"></el-table-column>
+
+			<el-table-column
+	            label='沟通方式'
+	            width="80">
+	            	<template slot-scope="scope">
+		                {{scope.row.communicateMethod | recordWayMap}}
+		            </template>
+	            </el-table-column>
+
+			<el-table-column
+				prop='comment'
+				label="注记内容"></el-table-column>
+		</el-table>
+		
+		<!-- 历史注记列表分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'historyRecordData', 'page_size', 'getHistoryRecordList')"
+		  		@current-change="handlePageChange($event, 'historyRecordData', 'page_no', 'getHistoryRecordList')"
+		  		:current-page='record.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='record.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='record.totalCount'></el-pagination>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,61 @@
+<div>
+	<!-- 标题头 -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list" style="margin-top: -1px;">
+		<el-table
+				v-loading.body='loading'
+				:data='allAssignCount.list'
+				stripe
+				:virtual-scrollbar='true'>
+
+			<el-table-column align='center' label="等级" width="65" prop="level"></el-table-column>
+
+			<el-table-column
+					label="总分配数上限"
+					width="220"
+					prop="totalAssignable"></el-table-column>
+
+			<el-table-column
+					label="每日分配数上限"
+					width="200"
+					prop="dailyAssignable"></el-table-column>
+
+
+			<el-table-column
+					label="操作人"
+					width="100"
+					prop="operatorOriginName"></el-table-column>
+
+			<el-table-column
+					label='操作'>
+				<template slot-scope="scope">
+					<el-button  type="primary" plain size='medium' @click="openEdit(scope.row.level, scope.row.dailyAssignable, scope.row.totalAssignable)" v-track="{type: 'btn', metric: 'click', id: 'total-assign:edit'}">编辑</el-button>
+				</template>
+			</el-table-column>
+
+		</el-table>
+	</div>
+
+
+	<!-- 弹出框：修改小职姐等级匹配上限数 -->
+	<el-dialog title="修改小职姐等级匹配上限数" :visible.sync="isShowEdit" width="35%" @close='colseEdit("editForm")'>
+		<el-form ref="editForm" :model="editParams" :rules='editParamsRules' label-width='180px'>
+			<el-form-item prop='totalAssignable' label="等级可分配总上限：">
+				<el-input v-model.number="editParams.totalAssignable" placeholder="请输入等级可分配总上限" maxlength="10" onkeyup="value=value.replace(/[^\d]/g,'')" style="width: 180px;"></el-input>
+			</el-form-item>
+
+			<el-form-item prop='dailyAssignable' label="等级每天可分配总上限：">
+				<el-input v-model.number="editParams.dailyAssignable" placeholder="请输入等级每天可分配总上限" maxlength="10" onkeyup="value=value.replace(/[^\d]/g,'')" style="width: 180px;"></el-input>
+			</el-form-item>
+		</el-form>
+
+		<span slot="footer" class="dialog-footer">
+			<el-button @click="isShowEdit = false">取 消</el-button>
+			<el-button type="primary" @click="edit('editForm')" v-track="{type: 'btn', metric: 'click', id: 'total-assign:submit'}">确 定</el-button>
+		</span>
+
+	</el-dialog>
+
+</div>

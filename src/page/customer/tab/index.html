@@ -1,0 +1,131 @@
+<div class="lxgs-tab-content">
+	<!-- 搜索 -->
+	<div class="lxgs-main-tab-search">
+		<el-form ref="jobApplyForm" :model="positionApplyData" :inline='true'>
+			<el-form-item prop='positionName'>
+				<el-input type='text' placeholder='请输入岗位名称' v-model.trim='positionApplyData.positionName'></el-input>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('jobApplyForm')" v-track="{type: 'btn', metric: 'click', id: 'customer-detail:position-apply:search'}">查询</el-button>
+				<el-button @click="reset('jobApplyForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 快速搜索 -->
+	<div class="lxgs-main-tab-search">
+		<el-form label-width='85px'>
+			<el-form-item label='岗位状态：'>
+				<el-radio v-model="positionApplyData.applyStatus" v-for='(i, index) in applyStatusList' :key="index" :label="i.key"  @change="getStatus('applyStatus')">{{i.value}}</el-radio>
+				<el-radio v-model="positionApplyData.closed" :label="1" @change="getStatus('closed')">关闭</el-radio>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 岗位申请列表 -->
+	<el-table
+		v-loading.body='loading'
+		element-loading-background="rgba(0, 0, 0, 0.6)"
+		:data='positionApply.items'
+	    stripe
+	    :virtual-scrollbar='true'>
+
+		<el-table-column
+            label='序号'
+            align='center'
+            width="65">
+            <template slot-scope="scope">
+				{{(scope.$index + 1) + (positionApply.pageNo -1) * positionApply.pageSize}}
+			</template>
+        </el-table-column>
+
+		<el-table-column
+			label="申请时间"
+			width="140">
+				<template slot-scope="scope">
+	                {{scope.row.applyTime | dateFormat01}}
+	            </template>
+			</el-table-column>
+
+		<el-table-column
+			prop='positionName'
+			label="岗位名称"></el-table-column>
+
+		<el-table-column label="岗位特性" width="90">
+			<template slot-scope="scope">
+				<span v-for="i in scope.row.positionTypes">{{i}} </span>
+			</template>
+		</el-table-column>
+
+		<el-table-column
+			label="岗位状态"
+			width="100">
+				<template slot-scope="scope">
+	                {{scope.row.applyStatus | applyStatusMap}}
+	            </template>
+		</el-table-column>
+
+		<el-table-column label="操作" width="240" v-if="hasRole('AGENT_MEMBER')">
+				<template slot-scope="scope">
+					<router-link :to='{name: "position-detail", params: {positionId: scope.row.positionId, positionName: scope.row.positionName}, query: {userId: $route.params.customerId, sex: info.sex, needRecommend: "false"}}' target='_blank' v-track="{type: 'btn', metric: 'click', id: 'customer-detail:position-apply:position-detail'}">岗位详情</router-link>
+					<!-- 申请状态才能显示预约 -->
+	                <el-button v-if='scope.row.applyStatus === 1' type="text" size="medium" @click='jobReserve(scope.row.applyId, scope.row.positionId, scope.row.positionName, scope.row.positionTypes)' v-track="{type: 'btn', metric: 'click', id: 'customer-detail:position-apply:reserve'}">预约</el-button>
+	                <el-button type="text" size="medium" @click="applyRecord(scope.row.applyId)" v-track="{type: 'btn', metric: 'click', id: 'customer-detail:position-apply:record'}">记录</el-button>
+	                <!-- 申请状态才能显示取消申请 -->
+	                <el-button v-if='scope.row.applyStatus === 1' type="text" size="medium" @click='cancelApply(scope.row.applyId)' v-track="{type: 'btn', metric: 'click', id: 'customer-detail:position-apply:cancel-apply'}">取消申请</el-button>
+	                <el-button v-if='scope.row.applyStatus === 50' type="text" size="medium">奖励异常</el-button>
+	            </template>
+		</el-table-column>
+	</el-table>
+
+	<!-- 岗位申请列表分页 -->
+	<div class='lxgs-main-pagination'>
+		<el-pagination
+			@size-change="handlePageChange($event, 'positionApplyData', 'pageSize', 'getPositionApplyList')"
+		  	@current-change="handlePageChange($event, 'positionApplyData', 'pageNo', 'getPositionApplyList')"
+	  		:current-page='positionApply.pageNo'
+			:page-sizes="pageSizes"
+			:page-size='positionApply.pageSize'
+			layout="total, sizes, prev, pager, next, jumper"
+			:total='positionApply.totalCount'></el-pagination>
+	</div>
+
+	<!-- 岗位预约 Popup -->
+	<el-dialog title="预约" :visible.sync="isShowReservePop" width="32%" class='reserve-pop'>
+		<!-- 预约 -->
+		<el-form label-width='150px' ref="reserve" :model='reserveData' :rules='reserveRules'>
+			<el-form-item label='请选择约用户去哪' prop='pickUpLocation'>
+				<el-select v-model="reserveData.pickUpLocation" placeholder="请选择约用户去哪里" @change="setPickupAddress">
+					<el-option v-for="(i, index) in pickupLocation" :key="index" :label="i.location" :value="i"></el-option>
+				</el-select>
+			</el-form-item>
+			<el-form-item label='请先选择约到哪天' prop='pickUpTime'>
+				<el-select v-model="reserveData.pickUpTime" placeholder="请先选择约到哪天" :disabled="!reserveData.pickUpLocation" @change="getToll">
+					<el-option v-for="(i, index) in pickupDate" :key="index" :label="i | dateFormat01" :value="i"></el-option>
+				</el-select>
+			</el-form-item>
+		</el-form>
+
+		<p v-if='reserveData.pickUpTime' style="font-size: 16px; padding: 0 26px;">预约 {{info.userName}} {{reserveData.pickUpTime | dateFormat01}} 到达 {{reserveData.pickUpLocation}}, 详细地址：{{reserveData.pickUpAddress}}</p>
+
+		<p v-if='reserveData.pickUpTime && (toll.userMaleToll || toll.userFemaleToll)' style="font-size: 16px; padding: 0 26px; color: #F56C6C;">温馨提示：该岗位需支付费用，男{{toll.userMaleToll}}元，女{{toll.userFemaleToll}}元，请提醒用户在APP上付费</p>
+
+		<p v-if='info.idCardVerified === false && positionDetail.preReserve === true'>需预报名提示：该岗位是预报名岗位，请协助客户进行实名认证</p>
+
+		<span slot="footer" class="dialog-footer">
+			<el-button @click="closeReservePop">取 消</el-button>
+			<el-button type="primary" @click='submitReserve("reserve")'>确 定</el-button>
+		</span>
+	</el-dialog>
+
+	<!-- 申请记录 Popup -->
+	<el-dialog
+		title="岗位申请记录"
+		:visible.sync="isShowApplyRecord"
+		width="40%">
+		<ul>
+			<li v-for="i in applyRecordList">{{i.occurTime | dateFormat01}} {{i.content}}</li>
+		</ul>
+	</el-dialog>
+</div>

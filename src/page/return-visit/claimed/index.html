@@ -1,0 +1,88 @@
+<div class="lxgs-main-search">
+    <el-form ref="claimPagingdata" :model='claimPagingdata' :inline='true'>
+
+        <el-form-item prop='user_name'>
+            <el-input placeholder="请输入客户姓名" v-model="claimPagingdata.user_name"></el-input>
+        </el-form-item>
+        <el-form-item prop='user_cellphone'>
+            <el-input placeholder="请输入客户手机号" v-model="claimPagingdata.user_cellphone"></el-input>
+        </el-form-item>
+
+        <el-form-item prop='from'>
+            <el-date-picker v-model="claimPagingdata.from" type="datetime" :editable="false" value-format="timestamp" placeholder="开始时间"></el-date-picker>
+        </el-form-item>
+
+        <el-form-item prop='to'>
+            <el-date-picker v-model="claimPagingdata.to" type="datetime" :editable="false" value-format="timestamp" placeholder="结束时间"></el-date-picker>
+        </el-form-item>
+
+        <el-form-item>
+            <el-button type="primary" @click="search('claimPagingdata')">查询</el-button>
+            <el-button @click="reset('claimPagingdata')">重置</el-button>
+        </el-form-item>
+    </el-form>
+    <div>
+    <el-table
+     :data="claim.items"
+     v-loading.body='loading'
+     highlight-current-row
+     style="width: 100%">
+        <el-table-column
+          type="index"
+          label="序号"
+          width="90">
+        </el-table-column>
+        <el-table-column
+          prop="name"
+          label="手机号"
+          width="120">
+          <template slot-scope="scope">
+            <span>{{scope.row.phone}}</span>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="userName"
+          label="客户姓名">
+        </el-table-column>
+        <el-table-column
+        label="性别">
+          <template slot-scope="scope">
+            <span type="primary">{{scope.row.sex | customerSexMap}}</span>
+          </template>
+         </el-table-column>
+        <el-table-column
+        label="注册时间">
+          <template slot-scope="scope">
+            <span type="primary">{{scope.row.registerTime | dateFormat01}}</span>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="channel"
+          label="渠道">
+        </el-table-column>
+        <el-table-column
+          width='360'
+          label="操作">
+            <template slot-scope="scope">
+                <lxgs-call :user-id="scope.row.userId.toString()" v-track="{type: 'btn', metric: 'click', id: 'return-visit:claim:call'}"></lxgs-call>
+
+              <el-button type="primary" size="small" @click="claimedQuestionnaires(scope.row,scope)" v-track="{type: 'btn', metric: 'click', id: 'return-visit:claim:remark-note'}">问卷</el-button>
+              <el-button type="primary" size="small" @click="handleAppointment(scope.row)" v-track="{type: 'btn', metric: 'click', id: 'return-visit:claim:position-detail'}">预约</el-button>
+              <el-button type="primary" size="small" @click="handledistribution(scope.row)" :disabled ='scope.row.noteStatus' v-track="{type: 'btn', metric: 'click', id: 'return-visit:claim:assign'}">分配</el-button>
+            </template>
+        </el-table-column>
+   </el-table>
+
+   <div class='lxgs-main-pagination'>
+      <el-pagination
+      @size-change="handlePageChange($event, 'claimPagingdata', 'page_size', 'claimedNotice')"
+      @current-change="handlePageChange($event, 'claimPagingdata', 'page_no', 'claimedNotice')"
+      :current-page='claim.pageNo'
+      :page-sizes="pageSizes"
+      :page-size='claim.pageSize'
+      layout="total, sizes, prev, pager, next, jumper"
+      :total='claim.totalCount'></el-pagination>
+   </div>
+   <usernotes :showremarkpop="isShowRemarkPop" :isshowmodel="isShowModel" :rowdata="rowdata" v-if="rowdata" :claimednotice="claimedNotice"></usernotes>
+ </div>
+</div>

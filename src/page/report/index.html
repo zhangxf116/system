@@ -1,0 +1,123 @@
+<div class="lxgs-report-agent-summary">
+	<!-- 标题头 -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<!-- 导出 -->
+	<div class="action">
+		<el-button  type="primary" size='medium' @click="getExport" v-track="{type: 'btn', metric: 'click', id: 'daily-summary:export'}" :loading="loadingImort">导出表格</el-button>
+	</div>
+
+	<div class="lxgs-main-search">
+		<!-- 搜索 -->
+		<el-form ref="summaryAgentForm" :model="summaryAgentData" :inline='true'>
+			<el-form-item prop='from'>
+				<el-date-picker v-model="summaryAgentData.from" type="date" :editable="false" value-format="timestamp" placeholder="开始时间"></el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop='to'>
+				<el-date-picker v-model="summaryAgentData.to" type="date" :editable="false" value-format="timestamp" placeholder="结束时间"></el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop='agent_id'>
+				<el-select v-model="summaryAgentData.agent_id" filterable placeholder="小职姐">
+					<el-option
+						v-for="(i, index) in agentList"
+						:key="index"
+						:label="i.nickname"
+						:value="i.agentId">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='supervisor_id'>
+				<el-select v-model="summaryAgentData.supervisor_id" filterable placeholder="主管">
+					<el-option
+						v-for="(i, index) in supervisorList"
+						:key="index"
+						:label="i.nickname"
+						:value="i.agentId">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('summaryAgentForm')" v-track="{type: 'btn', metric: 'click', id: 'daily-summary:search'}">查询</el-button>
+				<el-button @click="reset('summaryAgentForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<el-table
+			v-loading.body='loading'
+			:data='summaryAgent.items'
+		    stripe height="580"
+		    :virtual-scrollbar='true'>
+
+			<el-table-column
+	            label='序号'
+	            align='center'
+	            width="65">
+	            	<template slot-scope="scope">
+						{{(scope.$index + 1) + (summaryAgent.pageNo -1) * summaryAgent.pageSize}}
+					</template>
+	        </el-table-column>
+
+	        <el-table-column label="日期" width="100">
+	            <template slot-scope="scope">
+	                {{scope.row.day  | dateFormat02}}
+	            </template>
+	        </el-table-column>
+
+	       	<el-table-column prop='agentNickname' label="小职姐" width="130"></el-table-column>
+
+	       	<el-table-column prop='supervisorNickname' label="主管" width="100"></el-table-column>
+
+	      	<el-table-column prop='newMatchUserCount' label="新匹配人数" width="90"></el-table-column>
+
+	        <el-table-column prop='firstMatchCount' label="首次分配人数" width="110"></el-table-column>
+
+	       	<el-table-column prop='secondMatchCount' label="二次分配人数" width="110"></el-table-column>
+
+	        <el-table-column
+	        	prop='applyUserCount'
+	            label="报名人数"
+	            width="90"></el-table-column>
+
+	        <el-table-column
+	        	prop='reserveUserCount'
+	            label="预约人数"
+	            width="90"></el-table-column>
+
+	        <el-table-column
+	        	prop='signInUserCount'
+	            label="签到人数"
+	            width="90"></el-table-column>
+
+	        <el-table-column
+	        	prop='onboardingUserCount'
+	            label="入职人数"
+	            width="90"></el-table-column>
+
+	        <el-table-column prop='validOnboardingUserCount' label="有效入职人数" width="110"></el-table-column>
+
+	        <el-table-column prop='reachStandardOnboardingUserCount' label="达标入职人数" width="110"></el-table-column>
+
+	        <el-table-column prop='uploadedWXFriendCount' label="APP上传微信数"></el-table-column>
+	        
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'summaryAgentData', 'page_size', 'getSummaryAgentList')"
+		  		@current-change="handlePageChange($event, 'summaryAgentData', 'page_no', 'getSummaryAgentList')"
+		  		:current-page='summaryAgent.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='summaryAgent.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='summaryAgent.totalCount'></el-pagination>
+		</div>
+	</div>
+</div>

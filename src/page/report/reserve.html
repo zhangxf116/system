@@ -1,0 +1,178 @@
+<div class="lxgs-report-reserve">
+	<!-- 标题头  -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<div class="lxgs-main-search">
+		<!-- 搜索 -->
+		<el-form ref="paramsDataForm" :model="paramsData" :inline='true'>
+			<el-form-item prop='timeRange'>
+				<el-date-picker v-model="paramsData.timeRange" type="daterange" value-format="timestamp" :default-time="['00:00:00', '23:59:59']" range-separator="-" start-placeholder="日期起" end-placeholder="日期止" @change="getTime('paramsData', 'timeRange', 'from', 'to')"></el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop='position_name'>
+				<el-input v-model.trim="paramsData.position_name" type='text' placeholder='岗位名称'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='user_name'>
+				<el-input v-model.trim="paramsData.user_name" type='text' placeholder='客户姓名'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='user_cellphone'>
+				<el-input v-model.trim="paramsData.user_cellphone" type='text' placeholder='手机号'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='agent_id' v-if="!hasRole('AGENT_MEMBER')">
+				<el-select v-model="paramsData.agent_id" filterable placeholder="小职姐">
+					<el-option
+						v-for="(i, index) in agentList"
+						:key="index"
+						:label="i.nickname"
+						:value="i.agentId">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='pick_up_party_id'>
+				<el-select v-model="paramsData.pick_up_party_id" placeholder="接站方">
+					<el-option
+						v-for="(i, index) in pickupAll"
+						:key="index"
+						:label="i.name"
+						:value="i.id">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='reserveTimeRange'>
+				<el-date-picker v-model="paramsData.reserveTimeRange" type="daterange" value-format="timestamp" :default-time="['00:00:00', '23:59:59']" range-separator="-" start-placeholder="预约时间起" end-placeholder="预约时间止" @change="getTime('paramsData', 'reserveTimeRange', 'reserve_time_from', 'reserve_time_to')"></el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop='operator_type'>
+				<el-select v-model="paramsData.operator_type" placeholder="请选择预约人">
+					<el-option label="用户" :value="0"></el-option>
+					<el-option label="小职姐" :value="1"></el-option>
+					<el-option label="小职姐助理" :value="2"></el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='need_pre_reserve'>
+				<el-checkbox v-model="paramsData.need_pre_reserve">需预报名</el-checkbox>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('paramsDataForm')" v-track="{type: 'btn', metric: 'click', id: 'reserve-customer:search'}">查询</el-button>
+				<el-button @click="reset('paramsDataForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<el-table v-loading.body='loading' :data='reservation.items' stripe height="550" :virtual-scrollbar='true' @sort-change="sort">
+		    <el-table-column label='序号' align='center' width="65" fixed="left">
+            	<template slot-scope="scope">
+					<div :class="scope.row.configuredReturnFee === false ? 'no-return-fee' : ''">{{(scope.$index + 1) + (reservation.pageNo -1) * reservation.pageSize}}</div>
+				</template>
+	        </el-table-column>
+
+	        <el-table-column label="日期" prop='createTime' width="100" sortable='custom'>
+	            <template slot-scope="scope">
+	                {{scope.row.createTime | dateFormat02}}
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="小职姐" width="100">
+            	<template slot-scope="scope">
+            		{{scope.row.agentNickname}}
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column prop='supervisorNickname' label="主管" width="100"></el-table-column>
+
+	        <el-table-column label="客户姓名" width="140">
+	            <template slot-scope="scope">
+	                <template v-if="scope.row.userNickname">{{scope.row.userNickname}}</template> 
+            		<router-link :to='{name: "customer-detail", params: {customerId: scope.row.userId}}' target='_blank'  class="lxgs-customer-name" v-track="{type: 'btn', metric: 'click', id: 'reserve-customer:customer-detail'}">({{scope.row.userName}})</router-link>
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="等级" width="50" prop='userRank'></el-table-column>
+
+	        <el-table-column label="实名" width="120">
+	        	<template slot-scope='scope'>
+	        		<template v-if="scope.row.realNameVerified === true">已实名</template>
+	        		<template v-if="scope.row.realNameVerified === false">未实名</template>
+
+	        		<strong class="lxgs-red" v-if="scope.row.preReserve === true">预报名</strong>
+	        	</template>
+	        </el-table-column>
+
+	        <el-table-column label="手机号" width="110">
+            	<template slot-scope="scope">
+            		{{scope.row.userPhone}}
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="岗位名称" width="160">
+	        	<template slot-scope="scope">
+        			<router-link :to='{name: "position-detail", params: {positionId: scope.row.positionId, positionName: scope.row.positionName}}' target='_blank' v-track="{type: 'btn', metric: 'click', id: 'reserve-customer:position-detail'}">{{scope.row.positionName}}</router-link>
+				</template>
+	        </el-table-column>
+
+	        <el-table-column label="接站方" width="140" prop='storeName'></el-table-column>
+
+	        <el-table-column label="接站地址" width="200" prop='pickUpAddress'></el-table-column>
+
+	        <el-table-column label="接站时间" prop='pickUpTime' width="140" sortable='custom'>
+            	<template slot-scope="scope">
+            		{{scope.row.pickUpTime | dateFormat01}}
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="预约时间" prop='reserveTime' width="140" sortable='custom'>
+            	<template slot-scope="scope">
+            		{{scope.row.reserveTime | dateFormat01}}
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="面试时间" prop='interviewTime' width="140" sortable='custom'>
+            	<template slot-scope="scope">
+            		{{scope.row.interviewTime | dateFormat01}}
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="预约人" width="80">
+				<template slot-scope="scope">{{scope.row.operatorType | reservePersonMap}}</template>
+			</el-table-column>
+
+	        <el-table-column label="预约状态" width="90">
+            	<template slot-scope="scope">
+            		<template v-if='scope.row.reserveStatus === 0'>已取消</template>
+            		<template v-if='scope.row.reserveStatus === 1'>已预约</template>
+            		<template v-if='scope.row.reserveStatus === 2'>已签到</template>
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="支付状态" width="80">
+				<template slot-scope="scope">{{scope.row.paymentStatus | paymentStatusMap}}</template>
+			</el-table-column>
+
+			<el-table-column label="退款状态" width="80">
+				<template slot-scope="scope">{{scope.row.refundStatus | refundStatusMap}}</template>
+			</el-table-column>
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'paramsData', 'page_size', 'getList')"
+		  		@current-change="handlePageChange($event, 'paramsData', 'page_no', 'getList')"
+		  		:current-page='reservation.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='reservation.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='reservation.totalCount'></el-pagination>
+		</div>
+	</div>
+
+</div>

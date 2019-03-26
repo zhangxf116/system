@@ -1,0 +1,241 @@
+<div class='lxgs-report-dashboard'>
+	<!-- 头部 -->
+	<div class="user-time">
+		<span class="user-count">所有用户数：{{dashboard.allUserCount}}</span>
+		<span class="time-filter">
+				<el-date-picker
+						v-model="timeRange"
+						type="daterange"
+						value-format="timestamp"
+						start-placeholder="开始日期"
+						end-placeholder="结束日期"
+						:default-time="['00:00:00', '23:59:59']"
+						@change="getTimeChange">
+    			</el-date-picker>
+
+			    <el-tooltip effect="light" placement="bottom">
+					<div slot="content">
+						<b>单日数据：</b><br/>
+						按照单日用户去重统计<br/>
+						<b>时间区间数据：</b><br/>
+						按照这一段时间里每天的数据相加
+					</div>
+					<i class="el-icon-question icon-question"></i>
+				</el-tooltip>
+		</span>
+	</div>
+
+	<!-- 任务快捷入口 -->
+	<ul class="quick-entry clearfix">
+		<li><p @click="showPopup('dashboard', 'newSignUpUserCount', 'getNewSignUp', 'isShowNewSignUpReport')" v-track="{type: 'btn', metric: 'click', id: 'dashboard:sign-up-user-count'}"><span>分配用户数</span> <em>{{dashboard.newSignUpUserCount}}</em></p></li>
+
+		<li><p @click="showPopup('dashboard', 'reserveUserCount', 'getDashboardDetail', 'isShowBoardDetail', 'RESERVE')" v-track="{type: 'btn', metric: 'click', id: 'dashboard:apply-user-count'}"><span>预约数</span> <em>{{dashboard.reserveUserCount}}</em></p></li>
+
+		<li><p @click="showPopup('dashboard', 'signInUserCount', 'getDashboardDetail', 'isShowBoardDetail', 'SIGN')" v-track="{type: 'btn', metric: 'click', id: 'dashboard:sign-in-user-count'}"><span>签到用户数</span> <em>{{dashboard.signInUserCount}}</em></p></li>
+
+		<li><p @click="showPopup('dashboard', 'onboardingUserCount', 'getDashboardDetail', 'isShowBoardDetail', 'RUZHI')" v-track="{type: 'btn', metric: 'click', id: 'dashboard:onboarding-user-count'}"><span>入职用户数</span> <em>{{dashboard.onboardingUserCount}}</em></p></li>
+
+		<li><p @click="showPopup('dashboard', 'validOnboardingUserCount', 'getDashboardDetail', 'isShowBoardDetail', 'EFFECTIVE')" v-track="{type: 'btn', metric: 'click', id: 'dashboard:valid-onboarding-user-count'}"><span>有效入职数</span> <em>{{dashboard.validOnboardingUserCount}}</em></p></li>
+	</ul>
+
+	<!--目标进度-->
+    <div class="target-schedule">
+		<div class="schedule">
+			<h4>今日签到目标进度<span class="title-desc">已签到人数 / 签到目标</span></h4>
+			<div class="schedule-cont" v-for="item in summaryProgress">
+				<div class="schedule-rate">{{item.rate}}</div>
+				<div class="schedule-right">
+					<span>{{item.completed}} / {{item.signInLevel}}</span>
+					<el-progress :percentage="item.percentage"></el-progress>
+					<div class="schedule-num" v-if="item.signInLevelDifference <= 0 && item.signInLevel != 0">
+						<img class="smile" src="../../static/css/image/smile.png">
+						<span style="color: red">完成目标</span>
+					</div>
+					<div class="schedule-num" v-else>
+						<span v-if="item.signInLevel != 0">还差{{item.signInLevelDifference}}个</span>
+						<span v-else></span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="schedule">
+			<h4>本月签到目标进度<span class="title-desc">已签到人数 / 签到目标</span></h4>
+			<div class="schedule-cont" v-for="item in summaryProgressMonth">
+				<div class="schedule-rate">{{item.rate}}</div>
+				<div class="schedule-right">
+					<span>{{item.completed}} / {{item.signInLevel}}</span>
+					<el-progress :percentage="item.percentage"></el-progress>
+					<div class="schedule-num" v-if="item.signInLevelDifference <= 0 && item.signInLevel != 0">
+						<img class="smile" src="../../static/css/image/smile.png">
+						<span style="color: red">完成目标</span>
+					</div>
+					<div class="schedule-num" v-else>
+						<span v-if="item.signInLevel != 0">还差{{item.signInLevelDifference}}个</span>
+						<span v-else></span>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!--图表-->
+	<div class="echart">
+		<div class="echart-desc">
+			<h3>当前微信好友指标和上传微信数</h3>
+			<div class="echart-time">
+				<el-date-picker
+						v-model="timeRangeWx"
+						type="daterange"
+						value-format="timestamp"
+						start-placeholder="开始日期"
+						end-placeholder="结束日期"
+						@change="getTimeChangeWx">
+				</el-date-picker>
+			</div>
+		</div>
+		<div id="myChart" :style="{width: '100%', height: '400px'}"></div>
+	</div>
+	<div class="echart">
+		<div class="echart-desc">
+			<h3>
+				月签到累计
+				<el-tooltip effect="light" placement="right">
+					<div slot="content">
+						<b>每日签到人数：</b><br/>
+						指每日有几个人数，按照日去重<br/>
+						<b>累计签到人数：</b><br/>
+						指每月的累计签到人数，按照月去重
+					</div>
+					<i class="el-icon-question icon-question"></i>
+				</el-tooltip>
+			</h3>
+			<div class="echart-time">
+				<el-date-picker
+						v-model="timeRangeSign"
+						type="month"
+						placeholder="选择月"
+						@change="getTimeChangeSign">
+				</el-date-picker>
+			</div>
+		</div>
+		<div id="myChart1" :style="{width: '100%', height: '400px'}"></div>
+	</div>
+
+	<!-- 风云榜 -->
+	<ul class="billboard clearfix">
+		<li v-for="item in Billboard">
+			<div class="content">
+				<div class="title">
+					<i class="el-icon-arrow-left" @click="addWeek('-1', item.name)"></i>
+					<div class="title-con">
+						<div>{{item.date}}</div>
+						<div>{{item.name}}</div>
+					</div>
+					<button class="disabledBtn">
+						<i :class="{'el-icon-arrow-right': true, 'active': isDisabled}" @click="addWeek('1', item.name)" v-if="item.name == '入职风云榜'"></i>
+						<i :class="{'el-icon-arrow-right': true, 'active': isDisabledSign}" @click="addWeek('1', item.name)" v-else-if="item.name == '签到风云榜'"></i>
+						<i :class="{'el-icon-arrow-right': true, 'active': isDisabledInvite}" @click="addWeek('1', item.name)" v-else></i>
+					</button>
+				</div>
+				<dl class="clearfix"><dt>名次</dt><dt>小职姐昵称</dt>
+					<dt>
+						{{item.nameMenu}}
+						<el-tooltip effect="light" placement="top" v-if="item.nameMenu == '邀请注册人数'">
+							<div slot="content">
+								<b>邀请注册人数：</b><br/>
+								小职姐的用户邀请的好友中，在当周注册的人数
+							</div>
+							<i class="el-icon-question icon-question"></i>
+						</el-tooltip>
+					</dt>
+				</dl>
+				<dl class="clearfix" v-for="i in item.leaderboard">
+					<dd>{{i.t1}}</dd>
+					<dd>{{i.t2 ? i.t2: '无'}}</dd>
+					<dd>{{i.t3}}</dd>
+				</dl>
+			</div>
+		</li>
+	</ul>
+
+	<!-- 弹出框：分配用户数 -->
+	<el-dialog title="分配用户数" :visible.sync="isShowNewSignUpReport" width="60%">
+		<!-- 搜索 -->
+		<el-date-picker
+				v-model="timeRangeDash"
+				type="daterange"
+				value-format="timestamp"
+				start-placeholder="开始日期"
+				end-placeholder="结束日期"
+				:default-time="['00:00:00', '23:59:59']"
+				@change="updateList">
+		</el-date-picker>
+
+		<div class="lxgs-main-list">
+			<ul class="new-sign-up-list clearfix">
+				<li v-for="i in newSignUpReport.items">
+					<router-link :to='{
+            				name: "customer-detail",
+            				params: {
+            					customerId: i.userId
+            				}
+            			}' target='_blank' v-track="{type: 'btn', metric: 'click', id: 'dashboard:customer-detail'}">{{i.userName ? i.userName : '--'}}</router-link>
+	            </li>
+	            <li v-if='newSignUpReport.items.length === 0' class="no-data">暂无数据</li>
+			</ul>
+
+			<!-- 分配用户数列表分页 -->
+			<div class='lxgs-main-pagination'>
+				<el-pagination
+					@size-change="handlePageChange($event, 'newSignUpData', 'page_size', 'getNewSignUp')"
+			  		@current-change="handlePageChange($event, 'newSignUpData', 'page_no', 'getNewSignUp')"
+			  		:current-page='newSignUpReport.pageNo'
+					:page-sizes="pageSizes"
+					:page-size='newSignUpReport.pageSize'
+					layout="total, sizes, prev, pager, next, jumper"
+					:total='newSignUpReport.totalCount'></el-pagination>
+			</div>
+		</div>
+	</el-dialog>
+
+	<!-- 弹出框： 预约数 | 签到用户数 | 入职用户数 | 有效入职用户数 -->
+	<el-dialog :title="boardDetailParams.type | dashboardTitleMap" :visible.sync="isShowBoardDetail" width="60%">
+		<!-- 搜索 -->
+		<el-date-picker
+				v-model="timeRangeBoard"
+				type="daterange"
+				value-format="timestamp"
+				start-placeholder="开始日期"
+				end-placeholder="结束日期"
+				:default-time="['00:00:00', '23:59:59']"
+				@change="updateListBoard">
+		</el-date-picker>
+
+		<div class="lxgs-main-list">
+			<ul class="application-report-list clearfix">
+				<li v-for="i in boardDetail.items">
+					<router-link :to='{
+            				name: "customer-detail",
+            				params: {
+            					customerId: i.userId
+            				}
+            			}' target='_blank' v-track="{type: 'btn', metric: 'click', id: 'dashboard:customer-detail'}">{{i.userName ? i.userName : '--'}}</router-link>
+	            </li>
+	            <li v-if='boardDetail.items.length === 0' class="no-data">暂无数据</li>
+			</ul>
+			
+			<!-- 预约数列表分页 -->
+			<div class='lxgs-main-pagination'>
+				<el-pagination
+					@size-change="handlePageChange($event, 'boardDetailParams', 'page_size', 'getDashboardDetail')"
+			  		@current-change="handlePageChange($event, 'boardDetailParams', 'page_no', 'getDashboardDetail')"
+			  		:current-page='boardDetail.pageNo'
+					:page-sizes="pageSizes"
+					:page-size='boardDetail.pageSize'
+					layout="total, sizes, prev, pager, next, jumper"
+					:total='boardDetail.totalCount'></el-pagination>
+			</div>
+		</div>
+	</el-dialog>
+</div>

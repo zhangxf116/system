@@ -1,0 +1,152 @@
+<div class="lxgs-agent-scheduling">
+	<!-- 标题头 -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<!-- 添加排班 -->
+	<div class="add">
+		<el-button  type="primary" size='medium' @click="add" v-track="{type: 'btn', metric: 'click', id: 'scheduling:add'}">添加排班</el-button>
+	</div>
+
+	<div class="lxgs-main-search">
+		<!-- 搜索 -->
+		<el-form ref="workSchedulingForm" :model="params" :inline='true'>
+			<el-form-item prop='from'>
+				<el-date-picker v-model="params.from" type="date" :editable="false" value-format="timestamp" placeholder="开始时间"></el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop='to'>
+				<el-date-picker v-model="params.to" type="date" :editable="false" value-format="timestamp" placeholder="结束时间"></el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop='agent_id'>
+				<el-select v-model="params.agent_id" filterable placeholder="小职姐">
+					<el-option
+						v-for="(i, index) in agentList"
+						:key="index"
+						:label="i.nickname"
+						:value="i.agentId">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='region'>
+				<el-select v-model="params.region" placeholder="请选择工作区域">
+					<el-option
+						v-for="(i, index) in region"
+						:key="index"
+						:label="i.name"
+						:value="i.value">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('workSchedulingForm')" v-track="{type: 'btn', metric: 'click', id: 'scheduling:search'}">查询</el-button>
+				<el-button @click="reset('workSchedulingForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<el-table v-loading.body='loading' :data='workScheduling.items' stripe height="580" :virtual-scrollbar='true'>
+
+	        <el-table-column label="时间" width="110">
+	            <template slot-scope="scope">
+	                {{scope.row.day  | dateFormat02}}
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="工作区域" prop='regionName' width='100'></el-table-column>
+
+	        <el-table-column
+	            label="上班小职姐">
+	            <template slot-scope="scope">
+	            	<span v-for="i in scope.row.agents" class="agents">{{i.nickname}}</span>
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column
+	            label='操作'
+	            width="100">
+	            <template slot-scope="scope">
+	            	<el-button v-if="scope.row.day >= currentDayZeroTime"  type="primary" plain size='medium' @click="edit(scope.row.day, scope.row.agents, scope.row.regionValue)" v-track="{type: 'btn', metric: 'click', id: 'scheduling:edit'}">编辑</el-button>
+	            </template>
+	        </el-table-column>
+	        
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'params', 'page_size', 'getList')"
+		  		@current-change="handlePageChange($event, 'params', 'page_no', 'getList')"
+		  		:current-page='workScheduling.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='workScheduling.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='workScheduling.totalCount'></el-pagination>
+		</div>
+	</div>
+
+	<!-- 弹出框：添加排班 -->
+	<el-dialog
+		title="添加排班"
+		:visible.sync="isShowScheduling"
+		:show-close="false"
+		width="55%">
+		<el-form ref="addForm" :model="addData" :inline='true' :rules='addDataRules'>
+			<el-form-item label="请选择工作区域：">
+				<el-form-item prop='region'>
+					<el-select v-model="addData.region" placeholder="请选择工作区域" @change="getAgentSchedulingList">
+						<el-option
+							v-for="(i, index) in region"
+							:key="index"
+							:label="i.name"
+							:value="i.value">
+							</el-option>
+					</el-select>
+				</el-form-item>
+
+				<el-form-item prop='from'>
+					<el-date-picker v-model="addData.from" type="date" :editable="false" value-format="timestamp" placeholder="结束时间" :disabled='true'></el-date-picker>
+				</el-form-item>
+
+				<el-form-item prop='to'>
+					<el-date-picker v-model="addData.to" type="date" :editable="false" value-format="timestamp" :picker-options="addTimeOptions" placeholder="结束时间" :default-value="lastSchedulingDate ? new Date(lastSchedulingDate) : new Date()"></el-date-picker>
+				</el-form-item>
+			</el-form-item>			
+
+			<el-form-item prop='agentIds' label="请选择上班的小职姐：">
+				<el-checkbox-group v-model="addData.agentIds">
+					<el-checkbox v-for='(i, index) in agentSchedulingList' :key="index" :label="i.agentId" size="mini">{{i.nickname}}</el-checkbox>
+				</el-checkbox-group>
+			</el-form-item>
+		</el-form>
+
+		<span slot="footer" class="dialog-footer">
+			<el-button @click="closeAddPop('addForm')">取 消</el-button>
+			<el-button type="primary" @click="submit('addForm')" v-track="{type: 'btn', metric: 'click', id: 'scheduling:add:submit'}">确 定</el-button>
+		</span>
+	</el-dialog>
+
+	<!-- 弹出框：修改排班记录 -->
+	<el-dialog
+		title="修改排班记录"
+		:visible.sync="isShowEditScheduling"
+		:show-close="false"
+		width="55%">
+		<el-form ref="editForm" :model="editData" :inline='true' :rules='editDataRules'>
+			<el-form-item prop='agentIds' label="请选择上班的小职姐：">
+				<el-checkbox-group v-model="editData.agentIds">
+					<el-checkbox v-for='(i, index) in agentSchedulingList' :key="index" :label="i.agentId" size="mini">{{i.nickname}}</el-checkbox>
+				</el-checkbox-group>
+			</el-form-item>
+		</el-form>
+
+		<span slot="footer" class="dialog-footer">
+			<el-button @click="isShowEditScheduling = false">取 消</el-button>
+			<el-button type="primary" @click="submitEdit('editForm')" v-track="{type: 'btn', metric: 'click', id: 'scheduling:edit:submit'}">确 定</el-button>
+		</span>
+	</el-dialog>
+</div>

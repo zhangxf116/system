@@ -1,0 +1,201 @@
+<div class="lxgs-position-detail">
+	<!-- 标题头  -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<!-- 推荐 -->
+	<div class="action" v-if="$route.query.needRecommend === 'true'">
+		<el-button type="primary" plain size='medium' @click="jobReserve($route.params.positionId, $route.params.positionName)" v-track="{type: 'btn', metric: 'click', id: 'position-detail:reserve'}">推荐</el-button>
+	</div>
+
+	<div class="lxgs-main-content">
+		<!-- 岗位图片 | 视频 -->
+		<div class="choose-title">
+			<el-radio-group v-model="chooseParams">
+				<el-radio-button label="pic">图片</el-radio-button>
+				<el-radio-button label="video">视频</el-radio-button>
+			</el-radio-group>
+		</div>
+
+		<ul class="position-image clearfix" v-if="chooseParams === 'pic'">
+			<li v-for="i in positionDetail.images">
+				<div class="image">
+					<img :src="i">
+					<strong class="des">用户可见</strong>
+				</div>
+			</li>
+
+			<li v-for="i in positionDetail.companyInnerImages">
+				<div class="image">
+					<img :src="i">
+				</div>
+			</li>
+		</ul>
+
+		<el-carousel height="340px" :interval="10000" type="card" indicator-position="none" class="position-video" v-if="chooseParams === 'video'">
+			<el-carousel-item v-for="(i, index) in positionDetail.companyInnerVideos" :key="index">
+				<iframe :src='videoSource(i.url)' scrolling="no" border="0" marginwidth="0" marginheight="0" allowfullscreen="true" allowtransparency="true" frameborder="0" class="video"></iframe>
+				<div class="des">
+					<span>{{i.label}}</span>
+					<el-button type="primary" size='medium' v-clipboard:copy="videoSource(i.url)" v-clipboard:success="copy">复制链接</el-button>
+				</div>
+			</el-carousel-item>
+		</el-carousel>
+
+		<!-- Part 1: -->
+		<ul class="part1">
+			<!-- 岗位特性 -->
+			<li class="position-type">
+				<el-tag type="danger" v-if="positionDetail.preReserve === true">需预报名</el-tag>
+				<el-tag type="danger" v-for='(i, index) in positionDetail.positionTypes' :key="index">{{i}}</el-tag>
+			</li>
+
+			<li><label>企业名称：</label> <span>{{positionDetail.companyName}}</span></li>
+			<li><label>企业简称：</label> <span>{{positionDetail.companyShortName}}</span></li>
+			<li><label>岗位名称：</label> <span>{{positionDetail.positionName}}</span></li>
+			<li>
+				<label>工作地区：</label>
+				<span>
+					{{positionDetail.workingProvince ? positionDetail.workingProvince : ''}}
+					{{positionDetail.workingCity ? positionDetail.workingCity : ''}}
+					{{positionDetail.workingArea ? positionDetail.workingArea : ''}}
+				</span>
+			</li>
+			<li><label>工作地址：</label> <span>{{positionDetail.workingAddress}}</span></li>
+
+			<li><label>岗位特征：</label> <el-tag v-for='(i, index) in positionDetail.positionFeatures' :key="index" style="margin-right: 5px; margin-bottom: 5px;">{{i}}</el-tag></li>
+		</ul>
+
+		<div class="part">
+			<label>招聘需求（面试时间、男女需求比例、入职奖励、入职奖励条件）</label>
+			<ul class="interview-date-wrapper">
+				<li v-for='i in positionDetail.recruitmentNeeds'>
+					<p>面试时间：{{i.interviewDate | dateFormat01}} <em class="major" v-if="i.major">主推</em> <em class="stop" v-if="i.status == 7">停招</em></p>
+					<p v-if="(i.maleQuantity > 0) && (i.femaleQuantity > 0)">男女需求：{{i.maleQuantity}}:{{i.femaleQuantity}}</p>
+					<p v-if="!(i.maleQuantity) && !(i.femaleQuantity)">男女需求：不限</p>
+					<p v-if="(i.maleQuantity > 0) && !(i.femaleQuantity)">男女需求：仅限男生</p>
+					<p v-if="(i.femaleQuantity > 0) && !(i.maleQuantity)">男女需求：仅限女生</p>
+
+					<p>招聘人数：{{i.headCount}}</p>
+
+					<p>	<span class="title">接站地址：</span>
+						<span class="span-content" v-for="ii in i.pickUpAddresses">
+							{{ii.location}}  {{ii.time | dateFormat01}}
+						</span>
+					</p>
+					<p>	<span class="title">入职奖励：</span>
+					<span class="span-content special" style="font-weight: bold;">
+						<span v-if="i.incumbencyStatus == 1">
+							出名单需在职,
+						</span>
+						<span v-if="i.namesDays">
+							出名单预计天数{{i.namesDays}}天
+						</span>
+					</span>
+					<span class="span-content"  v-for="ii in i.returnConditions">
+							{{ii.condition}}
+							<!-- url 带有客户ID和客户性别 -->
+							<span v-if="$route.query.sex === '1'">{{ii.userMaleFee}}元</span>
+							<span v-if="$route.query.sex === '2'">{{ii.userFemaleFee}}元</span>
+							<!-- url 不带有客户ID和客户性别 -->
+							<span v-if="!$route.query.sex">男{{ii.userMaleFee}}元</span>
+							<span v-if="!$route.query.sex">女{{ii.userFemaleFee}}元</span>
+						</span>
+					</p>
+					<p>工时单价：{{i.hourlyWage}}元/{{i.hourlyWageUnit | unitMap}}</p>
+					<p>平台补贴：{{i.platformSubsidy}}元/{{i.platformSubsidyUnit | unitMap}}</p>
+					<p>差价&补贴截止日期：{{i.platformSubsidyDeadline | dateFormat02}}</p>
+
+					<p>	<span class="title">收费金额：</span>
+						<span class="span-content">
+							<span v-if="i.userMaleToll">男{{i.userMaleToll}}：代收劳务公司管理费{{i.laborMaleToll}}，平台收费{{i.platformMaleToll}}，平台补贴{{i.platformMaleSubsidyToll}}</span>
+							<br>
+			            	<span v-if="i.userFemaleToll">女{{i.userFemaleToll}}：代收劳务公司管理费{{i.laborFemaleToll}}，平台收费{{i.platformFemaleToll}}，平台补贴{{i.platformFemaleSubsidyToll}}</span>
+						</span>
+					</p>
+				</li>
+			</ul>
+		</div>
+
+		<div class="part">
+			<label>面试要求</label> <pre v-html="positionDetail.interviewRequirements"></pre>
+		</div>
+
+		<div class="part">
+			<label>已预约数：</label> <span class="reserve">男女预约比例 {{positionDetail.reservedMaleQuantity}}:{{positionDetail.reservedFemaleQuantity}}</span>
+			<label class="apply-count">报名人数：</label> <span>{{positionDetail.applyCount}}</span>
+			<label class="entry-count">入职奖励人数：</label> <span>{{positionDetail.entryCount}}</span>
+		</div>
+
+		<div class="part">
+			<label>综合工资</label> <pre>{{positionDetail.minSalary}} - {{positionDetail.maxSalary}}元</pre>
+		</div>
+
+		<div class="part">
+			<label>工资说明</label> <pre v-html="positionDetail.salaryDescription"></pre>
+		</div>
+
+		<div class="part">
+			<label>衣食住行</label> <pre v-html="positionDetail.living"></pre>
+		</div>
+
+		<div class="part special">
+			<label>隐私描述（用户在APP上看不到）</label> <pre v-html='positionDetail.privateInfo'></pre>
+		</div>
+
+		<div class="part">
+			<label>任职要求</label> <pre v-html='positionDetail.requirement'></pre>
+		</div>
+
+		<div class="part">
+			<label>工作福利：</label> <span v-for='i in positionDetail.welfare'>{{i}}</span>
+		</div>
+
+		<div class="part">
+			<label>工作内容</label> <pre v-html='positionDetail.content'></pre>
+		</div>
+
+		<div class="part">
+			<label>工作时间</label> <pre v-html='positionDetail.workTime'></pre>
+		</div>
+
+		<div class="part">
+			<label>注意事项</label> <pre v-html='positionDetail.notice'></pre>
+		</div>
+
+		<div class="part">
+			<label>企业简介</label> <pre>{{positionDetail.companyProfile}}</pre>
+		</div>
+
+		<div class="part">
+			<label>员工规模</label> <pre>{{positionDetail.staffSize}}</pre>
+		</div>
+	</div>
+
+	<!-- 岗位预约 Popup -->
+	<el-dialog title="预约" :visible.sync="isShowReservePop" width="32%" class='reserve-pop' :modal-append-to-body='false'>
+		<!-- 预约 -->
+		<el-form label-width='150px' ref="reserve" :model='reserveData' :rules='reserveRules'>
+			<el-form-item label='请选择约用户去哪' prop='pickUpLocation'>
+				<el-select v-model="reserveData.pickUpLocation" placeholder="请选择约用户去哪里" @change="setPickupAddress">
+					<el-option v-for="(i, index) in pickupLocation" :key="index" :label="i.location" :value="i"></el-option>
+				</el-select>
+			</el-form-item>
+			<el-form-item label='请先选择约到哪天' prop='pickUpTime'>
+				<el-select v-model="reserveData.pickUpTime" placeholder="请先选择约到哪天" :disabled="!reserveData.pickUpLocation" @change="getToll">
+					<el-option v-for="(i, index) in pickupDate" :key="index" :label="i | dateFormat01" :value="i"></el-option>
+				</el-select>
+			</el-form-item>
+		</el-form>
+
+		<p v-if='reserveData.pickUpTime' style="font-size: 16px; padding: 0 26px;">预约 {{info.userName}} {{reserveData.pickUpTime | dateFormat01}} 到达 {{reserveData.pickUpLocation}}, 详细地址：{{reserveData.pickUpAddress}}</p>
+
+		<p v-if='reserveData.pickUpTime && (toll.userMaleToll || toll.userFemaleToll)' style="font-size: 16px; padding: 0 26px; color: #F56C6C;">温馨提示：该岗位需支付费用，男{{toll.userMaleToll}}元，女{{toll.userFemaleToll}}元，请提醒用户在APP上付费</p>
+
+		<p v-if='info.idCardVerified === false && positionDetail.preReserve === true'>需预报名提示：该岗位是预报名岗位，请协助客户进行实名认证</p>
+
+		<span slot="footer" class="dialog-footer">
+			<el-button @click="closeReservePop">取 消</el-button>
+			<el-button type="primary" @click='submitReserve("reserve")'>确 定</el-button>
+		</span>
+	</el-dialog>
+</div>

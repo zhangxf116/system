@@ -1,0 +1,106 @@
+<div class="lxgs-report-reserve">
+	<!-- 标题头  -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<div class="lxgs-main-search">
+		<!-- 搜索 -->
+		<el-form ref="paramsForm" :model="params" :inline='true'>
+			<el-form-item prop='customer_name'>
+				<el-input v-model.trim="params.customer_name" type='text' placeholder='客户姓名'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='customer_nickname'>
+				<el-input v-model.trim="params.customer_nickname" type='text' placeholder='常用称呼'></el-input>
+			</el-form-item>
+
+
+			<el-form-item prop='phone'>
+				<el-input v-model.trim="params.phone" type='text' placeholder='手机号'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='agent_id' v-if="!hasRole('AGENT_MEMBER')">
+				<el-select v-model="params.agent_id" filterable placeholder="小职姐">
+					<el-option
+						v-for="(i, index) in agentList"
+						:key="index"
+						:label="i.nickname"
+						:value="i.agentId">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='supervisor_id' v-if="!hasRole('AGENT_MEMBER')">
+				<el-select v-model="params.supervisor_id" filterable placeholder="主管">
+					<el-option
+							v-for="(i, index) in supervisorList"
+							:key="index"
+							:label="i.nickname"
+							:value="i.agentId">
+					</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='payment_status' v-if="!hasRole('AGENT_MEMBER')">
+				<el-select v-model="params.payment_status" filterable placeholder="车费发放状态">
+					<el-option label='未提现' value="0"></el-option>
+					<el-option label='可提现' value="1"></el-option>
+					<el-option label='提现中' value="2"></el-option>
+					<el-option label='提现成功' value="3"></el-option>
+					<el-option label='提现失败' value="4"></el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('paramsForm')" v-track="{type: 'btn', metric: 'click', id: 'customer-spring-trip:search'}">查询</el-button>
+				<el-button @click="reset('paramsForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<el-table v-loading.body='loading' :data='springTrip.items' stripe height="550" :virtual-scrollbar='true'>
+		    <el-table-column label='序号' align='center' width="65" fixed="left">
+            	<template slot-scope="scope">
+					{{(scope.$index + 1) + (springTrip.pageNo -1) * springTrip.pageSize}}
+				</template>
+	        </el-table-column>
+
+	        <el-table-column prop='agentNickname' label="小职姐" width="150"></el-table-column>
+
+	        <el-table-column prop='supervisorNickname' label="主管" width="120"></el-table-column>
+
+	        <el-table-column label="客户姓名" width="140">
+	            <template slot-scope="scope">
+	                <template v-if="scope.row.nickname">{{scope.row.nickname}}</template>
+            		<router-link :to='{name: "customer-detail", params: {customerId: scope.row.userId}}' target='_blank'  class="lxgs-customer-name" v-track="{type: 'btn', metric: 'click', id: 'customer-spring-trip:customer-detail'}">({{scope.row.userName}})</router-link>
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column prop='phone' label="手机号" width="140"></el-table-column>
+
+	        <el-table-column prop='toll' label="累积获得路费" width="140"></el-table-column>
+
+			<el-table-column prop='paymentStatus' label="车费发放状态" width="140">
+				<template slot-scope="scope">{{scope.row.paymentStatus | userPaymentStatusMap}}</template>
+			</el-table-column>
+
+	        <el-table-column label='车费发放时间' prop='paymentTime'>
+				<template slot-scope="scope">{{scope.row.paymentTime | dateFormat01}}</template>
+			</el-table-column>
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'params', 'page_size', 'getList')"
+		  		@current-change="handlePageChange($event, 'params', 'page_no', 'getList')"
+		  		:current-page='springTrip.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='springTrip.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='springTrip.totalCount'></el-pagination>
+		</div>
+	</div>
+
+</div>

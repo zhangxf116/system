@@ -1,0 +1,150 @@
+<div class="lxgs-team-config">
+    <!-- 标题头 -->
+    <h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+    <!-- 添加主管 -->
+    <div class="add-team-config">
+        <el-button type="primary" icon="el-icon-plus" @click='addShow()' v-track="{type: 'btn', metric: 'click', id: 'team-config:add'}" size='medium'>添加主管</el-button>
+    </div>
+
+    <!-- 数据列表 -->
+    <div class="lxgs-main-list" style="margin-top: -1px;">
+        <el-table v-loading.body='loading' :data="teamConfig.items" stripe>
+            <el-table-column label="序号" type="index" align='center' width="60">
+                <template slot-scope="scope">
+                    {{(scope.$index + 1) + (teamConfig.pageNo -1) * teamConfig.pageSize}}
+                </template>
+            </el-table-column>
+
+            <el-table-column property="managerNickname" label="经理" width="100"></el-table-column>
+
+            <el-table-column property="supervisorNickname" label="主管" width="80"></el-table-column>
+            
+            <el-table-column property="agents" label="小职姐">
+                <template slot-scope="scope">
+                    <span v-for="item in scope.row.agents" class="zxj-scope">{{item.nickname}}</span>
+                </template>
+            </el-table-column>
+
+            <el-table-column property="updateTime" label="最后修改时间" width="150">
+                <template slot-scope="scope">
+                    {{scope.row.updateTime  | dateFormat01}}
+                </template>
+            </el-table-column>
+
+            <el-table-column property="operatorName" label="操作人" width="90"></el-table-column>
+
+            <el-table-column label="操作" width="220">
+                <template slot-scope="scope">
+                    <el-button  type="danger" size='medium' @click="deleteShow(scope.row)" v-track="{type: 'btn', metric: 'click', id: 'team-config:delete'}">删除</el-button>
+                    <el-button  type="primary" size='medium' @click="changeShow(scope.row)" v-track="{type: 'btn', metric: 'click', id: 'team-config:change'}">换主管</el-button>
+                    <el-button  type="primary" size='medium' @click="editShow(scope.row)" v-track="{type: 'btn', metric: 'click', id: 'team-config:edit-xzj'}">编辑</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+
+        <!-- 分页 -->
+        <div class='lxgs-main-pagination'>
+            <el-pagination
+                @size-change="handlePageChange($event, 'params', 'page_size', 'getList')"
+                @current-change="handlePageChange($event, 'params', 'page_no', 'getList')"
+                :current-page="teamConfig.pageNo"
+                :page-sizes="pageSizes"
+                :page-size="teamConfig.pageSize"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="teamConfig.totalCount">
+            </el-pagination>
+        </div>
+    </div>
+
+    <!-- 添加主管 -->
+    <el-dialog title="添加主管" :visible.sync="isShowAdd" width="45%" @close="close('addData')">
+        <el-form ref="addData" :model="addData" :rules='addDataRules'>
+            <el-form-item label="经理：" label-width="80px" prop="managerId">
+                <el-radio-group v-model="addData.managerId">
+                    <el-radio v-for="item in agentList" :key="item.agentId" :label="item.agentId" class="radio">{{item.nickname}}</el-radio>
+                </el-radio-group>
+            </el-form-item>
+            <el-form-item label="主管：" label-width="80px" prop='agentId'>
+                <el-select
+                        v-model="addData.agentId"
+                        clearable
+                        filterable
+                        remote
+                        reserve-keyword
+                        placeholder="请输入姓名"
+                        :remote-method="remoteMethod"
+                        :loading="loadingSearch">
+                    <el-option
+                            v-for="item in allSupervisorsData"
+                            :key="item.agentId"
+                            :label="item.nickname"
+                            :value="item.agentId">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+        </el-form>
+
+        <span slot="footer" class="dialog-footer">
+			<el-button @click="isShowAdd = false">取 消</el-button>
+			<el-button type="primary" @click="submitAdd('addData')">确 定</el-button>
+		</span>
+
+    </el-dialog>
+
+    <!-- 更换主管 -->
+    <el-dialog title="更换主管" :visible.sync="isShowChange" width="30%" @close="close('changeData')">
+        <el-form ref="changeData" :model="changeData" :rules='changeDataRules'>
+            <el-form-item label="主管：" label-width="80px" prop='agentId'>
+                <el-select
+                        v-model="changeData.agentId"
+                        clearable
+                        filterable
+                        remote
+                        reserve-keyword
+                        placeholder="请输入姓名"
+                        :remote-method="remoteMethod"
+                        :loading="loadingSearch">
+                    <el-option
+                            v-for="item in allSupervisorsData"
+                            :key="item.agentId"
+                            :label="item.nickname"
+                            :value="item.agentId">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+        </el-form>
+
+        <span slot="footer" class="dialog-footer">
+			<el-button @click="isShowChange = false">取 消</el-button>
+			<el-button type="primary" @click="submitChange('changeData')">确 定</el-button>
+		</span>
+
+    </el-dialog>
+
+    <!-- 编辑 -->
+    <el-dialog title="请选择该组的小职姐" :visible.sync="isShowEdit" width="55%" @close='close("editData")'>
+        <el-form ref="editData" :model="editData" @submit.native.prevent>
+            <el-form-item prop='searchKey'>
+                <el-input v-model.trim="editData.searchKey" placeholder="请输入小职姐昵称过滤" prefix-icon="el-icon-search" clearable @change='searchEngine' style="width: 180px;"></el-input>
+                <em class="lxgs-blue" style="font-size: 12px;">支持拼音搜索，回车确认，<i class="el-icon-error"></i>清除</em>
+            </el-form-item>
+            <el-form-item>
+                <el-checkbox-group v-model="editData.agentIds" style="margin-left: -15px;">
+                    <el-checkbox
+                            v-for="item in list"
+                            :label="item.agentId"
+                            :key="item.agentId"
+                            class="check-label">{{item.nickname}}</el-checkbox>
+                </el-checkbox-group>
+                <span v-if="list.length === 0">无过滤结果..</span>
+            </el-form-item>
+        </el-form>
+
+        <span slot="footer" class="dialog-footer">
+			<el-button @click="isShowEdit = false">取 消</el-button>
+			<el-button type="primary" @click="submitEdit('editData')">确 定</el-button>
+		</span>
+
+    </el-dialog>
+</div>

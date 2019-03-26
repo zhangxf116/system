@@ -1,0 +1,64 @@
+<div class="lxgs-tab-content">
+	<!-- 奖励记录列表 -->
+	<el-table
+		v-loading.body='loading'
+		element-loading-background="rgba(0, 0, 0, 0.6)"
+		:data='followingRecord.items'
+	    stripe
+	    :virtual-scrollbar='true'>
+
+		<el-table-column
+            label='序号'
+            align='center'
+            width="65">
+            <template slot-scope="scope">
+				{{(scope.$index + 1) + (followingRecord.pageNo -1) * followingRecord.pageSize}}
+			</template>
+        </el-table-column>
+
+        <el-table-column
+			label="关注日期"
+			width="140">
+				<template slot-scope="scope">
+	                <span v-if="scope.row.date">{{scope.row.date | dateFormat01}}</span>
+	            </template>
+		</el-table-column>
+
+        <el-table-column
+			label="企业简称"
+			width='120'
+			prop="companyShortName"></el-table-column>
+
+		<el-table-column
+			label="岗位名称"
+			prop='positionName'></el-table-column>
+
+		<el-table-column
+			label="岗位状态"
+			width="100">
+				<template slot-scope="scope">
+					{{scope.row.status | jobStatusMap}}
+				</template>
+			</el-table-column>
+
+		<el-table-column
+			label="操作"
+			width="90">
+	            <template slot-scope="scope">
+					<router-link :to='{name: "position-detail", params: {positionId: scope.row.positionId, positionName: scope.row.positionName}}' target='_blank' v-track="{type: 'btn', metric: 'click', id: 'customer-detail:following:position-detail'}">查看详情</router-link>
+	            </template>
+			</el-table-column>
+	</el-table>
+
+	<!-- 奖励记录列表分页 -->
+	<div class='lxgs-main-pagination'>
+		<el-pagination
+			@size-change="handlePageChange($event, 'followingData', 'page_size', 'getFocusList')"
+		  	@current-change="handlePageChange($event, 'followingData', 'page_no', 'getFocusList')"
+	  		:current-page='followingRecord.pageNo'
+			:page-sizes="pageSizes"
+			:page-size='followingRecord.pageSize'
+			layout="total, sizes, prev, pager, next, jumper"
+			:total='followingRecord.totalCount'></el-pagination>
+	</div>
+</div>

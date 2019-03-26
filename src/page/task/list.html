@@ -1,0 +1,128 @@
+<div class='lxgs-task-history'>
+	<!-- 标题头  -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<div class="lxgs-main-search">
+		<!-- 搜索 -->
+		<el-form ref="taskForm" :model="taskData" :inline='true'>
+			<el-form-item prop='timeRange'>
+				<el-date-picker v-model="taskData.timeRange" value-format="timestamp" type="daterange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" :default-time="['00:00:00', '23:59:59']" @change="getTime('taskData', 'timeRange', 'startTimeFrom', 'startTimeTo')"></el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop='agentId'>
+				<el-select v-model="taskData.agentId" filterable placeholder="请选择小职姐">
+					<el-option
+						v-for="(i, index) in agentList"
+						:key="index"
+						:label="i.nickname"
+						:value="i.agentId">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='taskTypeId'>
+				<el-select v-model="taskData.taskTypeId" placeholder="请选择任务类型">
+					<el-option
+						v-for="(i, index) in taskTypeList"
+						:key="index"
+						:label="i.name"
+						:value="i.id">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='taskTypeId'>
+				<el-select v-model="taskData.taskCategory" placeholder="请选择任务状态">
+					<el-option label="待处理" :value="taskCategory.pending"></el-option>
+					<el-option label="历史任务" :value="taskCategory.history"></el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='userRank'>
+				<el-select v-model="taskData.userRank" placeholder="请选择用户等级">
+					<el-option
+						v-for="(i, index) in userRankList"
+						:key="index"
+						:label="i"
+						:value="i">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='userName'>
+				<el-input v-model.trim="taskData.userName" type='text' placeholder='客户姓名'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='userPhone'>
+				<el-input v-model.trim="taskData.userPhone" type='text' placeholder='手机号码'></el-input>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('taskForm')" v-track="{type: 'btn', metric: 'click', id: 'agent-history-task:search'}">查询</el-button>
+				<el-button @click="reset('taskForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list">
+		<el-table
+			v-loading.body='loading'
+			:data='task.items'
+		    stripe height="580"
+		    :virtual-scrollbar='true'>
+
+			<el-table-column
+	            prop='taskNo'
+	            label='任务编号'
+	            width="90"></el-table-column>
+
+	        <el-table-column label="小职姐" prop='agentNickname' width="110"></el-table-column>
+
+	        <el-table-column label="客户姓名" width="140">
+            	<template slot-scope="scope">
+	                <template v-if="scope.row.nickname">{{scope.row.nickname}}</template> 
+            		<router-link :to='{name: "customer-detail", params: {customerId: scope.row.userId}}' target='_blank'  class="lxgs-customer-name" v-track="{type: 'btn', metric: 'click', id: 'agent-history-task:customer-detail'}">({{scope.row.userName}})</router-link>
+	            </template>
+	        </el-table-column>
+
+	        <el-table-column label="等级" width="50" prop='userRank'></el-table-column>
+
+	        <el-table-column
+	            label="客户手机号"
+	            prop='userPhone'
+	            width="110">
+	        </el-table-column>
+
+			<el-table-column
+				prop='taskTypeName'
+				label="任务类型"
+				width="90"></el-table-column>
+
+			<el-table-column
+				prop='taskDescription'
+				label="任务描述"></el-table-column>
+
+			<el-table-column
+				label="提醒时间"
+				width="140">
+					<template slot-scope="scope">
+		                {{scope.row.startTime | dateFormat01}}
+		            </template>
+				</el-table-column>
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'taskData', 'pageSize', 'getTaskList')"
+		  		@current-change="handlePageChange($event, 'taskData', 'pageNo', 'getTaskList')"
+		  		:current-page='task.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='task.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='task.totalCount'></el-pagination>
+		</div>
+	</div>
+
+</div>

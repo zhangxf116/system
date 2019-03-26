@@ -1,0 +1,28 @@
+<div class="lxgs-main-tab-wrapper" style="margin-top: 0;">
+    <el-tabs @tab-click="handchence">
+        <el-tab-pane>
+            <span slot="label" v-track="{type: 'btn', metric: 'click', id: 'return-visit:unclaim'}">
+                <span>({{unclaime.totalCount}})</span> 未认领
+            </span>
+            <unclaimed :unclaime='unclaime' :getunclaimedlistnotice='getunclaimedlistnotice' ></unclaimed>
+        </el-tab-pane>
+        <el-tab-pane>
+            <span slot="label" v-track="{type: 'btn', metric: 'click', id: 'return-visit:claim'}">
+                <span>({{claim.totalCount}})</span> 已认领
+            </span>
+            <claimed :claim='claim' :getcompletelist='getcompletelist' ></claimed>
+        </el-tab-pane>
+        <el-tab-pane>
+            <span slot="label" v-track="{type: 'btn', metric: 'click', id: 'return-visit:unconnect'}">
+                <span>({{notices.totalCount}})</span> 未接通
+            </span>
+            <unconnected :notices='notices' :getcompletelist='getcompletelist' v-if="isshow==2"></unconnected>
+        </el-tab-pane>
+        <el-tab-pane>
+            <span slot="label" v-track="{type: 'btn', metric: 'click', id: 'return-visit:complete'}">
+                <span>({{complete.totalCount}})</span> 已完成
+            </span>
+            <complete :complete='complete' :getcompletelist='getcompletelist'></complete>
+        </el-tab-pane>
+    </el-tabs>
+</div>

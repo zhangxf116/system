@@ -1,0 +1,149 @@
+<div class="lxgs-fund-bonus">
+	<!-- 标题头  -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<!-- 导出 -->
+	<div class="action">
+		<el-button  type="primary" size='medium' @click="getExport" v-track="{type: 'btn', metric: 'click', id: 'bonus:export'}" :loading="loadingImort">导出表格</el-button>
+	</div>
+
+	<div class="lxgs-main-content">
+		<el-tag type="warning">昨日入职提成：{{summary.yesterdayOnboardingReward}}</el-tag>
+		<el-tag type="success">昨日在职提成：{{summary.yesterdayWorkingReward}}</el-tag>
+		<el-tag type="info">昨日邀请提成：{{summary.yesterdayInviteReward}}</el-tag>
+
+		<el-tag type="danger">昨日总提成：{{summary.yesterdayReward}}</el-tag>
+		<el-tag type="warning">本月入职提成：{{summary.monthlyOnboardingReward}}</el-tag>
+		<el-tag type="success">本月在职提成：{{summary.monthlyWorkingReward}}</el-tag>
+
+		<el-tag type="info">本月邀请提成：{{summary.monthlyInviteReward}}</el-tag>
+
+		<el-tag type="danger">本月总提成：{{summary.monthlyReward}}</el-tag>
+	</div>
+
+	<div style="margin-top: 20px;">
+		<el-radio-group v-model="params.reward_type" @change='reset("paramsForm")'>
+			<el-radio-button :label="0">入职提成</el-radio-button>
+			<el-radio-button :label="1">在职提成</el-radio-button>
+			<el-radio-button :label="2">邀请提成</el-radio-button>
+		</el-radio-group>
+	</div>
+
+	<div class="lxgs-main-search">
+		<!-- 搜索 -->
+		<el-form ref="paramsForm" :model="params" :inline='true'>
+			<el-form-item prop='timeRange'>
+				<el-date-picker
+					v-model="params.timeRange"
+					type="daterange"
+					value-format="timestamp"
+					range-separator="-"
+					start-placeholder="提成开始时间"
+					end-placeholder="提成结束时间"
+					:default-time="['00:00:00', '23:59:59']"
+					@change="getTime('params', 'timeRange', 'reward_date_from', 'reward_date_to')">
+					</el-date-picker>
+			</el-form-item>
+
+			<el-form-item prop='agent_id' v-if="!hasRole('AGENT_MEMBER')">
+				<el-select v-model="params.agent_id" filterable placeholder="小职姐姓名">
+					<el-option
+						v-for="(i, index) in agentList"
+						:key="index"
+						:label="i.name"
+						:value="i.agentId">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item prop='user_name'>
+				<el-input v-model.trim="params.user_name" type='text' placeholder='客户姓名'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='user_phone'>
+				<el-input v-model.trim="params.user_phone" type='text' placeholder='手机号码'></el-input>
+			</el-form-item>
+
+			<el-form-item prop='onboarding_status'>
+				<el-select v-model="params.onboarding_status" filterable placeholder="在职状态">
+					<el-option
+						v-for="(i, index) in jobStatus"
+						:key="index"
+						:label="i.key"
+						:value="i.value">
+						</el-option>
+				</el-select>
+			</el-form-item>
+
+			<el-form-item>
+				<el-button type="primary" @click="search('paramsForm')" v-track="{type: 'btn', metric: 'click', id: 'bonus:search'}">查询</el-button>
+				<el-button @click="reset('paramsForm')">重置</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list" style="margin-top: -1px;">
+		<el-table v-loading.body='loading' :data='reward.items' stripe :virtual-scrollbar='true'>
+
+			<el-table-column label='序号' align='center' width="65">
+            	<template slot-scope="scope">
+					{{(scope.$index + 1) + (reward.pageNo -1) * reward.pageSize}}
+				</template>
+            </el-table-column>
+
+		    <el-table-column label='日期' width="100">
+				<template slot-scope="scope">
+					<span>{{scope.row.day | dateFormat02}}</span>
+				</template>
+	        </el-table-column>
+
+	        <el-table-column :label='params.reward_type | bonusPageManagerMap' prop='managerNickname' width="90"></el-table-column>
+	        <el-table-column :label='params.reward_type | bonusPageSupervisorMap' prop='supervisorNickname' width="90"></el-table-column>
+	        <el-table-column :label='params.reward_type | bonusPageAgentMap' prop='agentName' width="120"></el-table-column>
+	        
+	        <el-table-column label='客户姓名' prop='userName' width="100"></el-table-column>
+
+	        <el-table-column label='电话号码' prop='phone' width="100"></el-table-column>
+
+
+	        <el-table-column label='入职岗位' prop='positionName' min-width="200"></el-table-column>
+
+	        <el-table-column label="提成模式" prop='rewardMode' width="90"></el-table-column>
+
+	        <el-table-column label='入职时间' width="100">
+				<template slot-scope="scope">
+					<span>{{scope.row.onboardingTime | dateFormat02}}</span>
+				</template>
+	        </el-table-column>
+
+	        <el-table-column label='离职时间' width="100">
+				<template slot-scope="scope">
+					<span>{{scope.row.quitTime | dateFormat02}}</span>
+				</template>
+	        </el-table-column>
+
+	        <el-table-column label='在职状态' width="80">
+				<template slot-scope="scope">
+					<span>{{scope.row.onboardingStatus | onboardingStatusMap}}</span>
+				</template>
+	        </el-table-column>
+
+	        <el-table-column label="入职提成" prop='dailyOnboardingReward' width="90" v-if="params.reward_type === 0"></el-table-column>
+	        <el-table-column label="在职提成" prop='dailyWorkingReward' width="90" v-if="params.reward_type === 1"></el-table-column>
+	        <el-table-column label="邀请提成" prop='dailyInviteReward' width="90" v-if="params.reward_type === 2"></el-table-column>
+		</el-table>
+		
+		<!-- 分页 -->
+		<div class='lxgs-main-pagination'>
+			<el-pagination
+				@size-change="handlePageChange($event, 'params', 'page_size', 'getList')"
+		  		@current-change="handlePageChange($event, 'params', 'page_no', 'getList')"
+		  		:current-page='reward.pageNo'
+				:page-sizes="pageSizes"
+				:page-size='reward.pageSize'
+				layout="total, sizes, prev, pager, next, jumper"
+				:total='reward.totalCount'></el-pagination>
+		</div>
+	</div>
+</div>

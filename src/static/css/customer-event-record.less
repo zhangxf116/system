@@ -1,0 +1,51 @@
+.lxgs-customer-event-record {
+	position: relative;
+	
+	.action {
+		position: absolute;
+		right: 15px;
+		top: 6px;
+	}
+	
+	.value, .key {
+		display: inline-block;
+		margin: 10px;
+	}
+	.value {
+		font-size: 18px;
+		font-style: normal;
+	}
+	.key {
+		width: 70px;
+		text-align: right;
+		color: @light-gray;
+	}
+
+	.time, .phone {
+		padding: 10px 0;
+		font-size: 18px;
+	}
+	.phone {
+		margin-left: 15px;
+	}
+
+	.line {
+
+		&-right, &-left {
+			position: relative;
+		}
+		&-right:after, &-left:after {
+			position: absolute;
+			top: 0;
+			height: 100%;
+			content: '';
+			border-right: 1px solid @border-color;
+		}
+		&-right:after {
+			right: 40px;
+		}
+		&-left:after {
+			left: -40px;
+		}
+	}
+}

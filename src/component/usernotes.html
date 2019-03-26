@@ -1,0 +1,212 @@
+<div class="lxgs-common-user-wrap">
+  
+    <el-dialog :visible.sync="showremarkpop" width="75%" :show-close='false' :close-on-click-modal='false' :close-on-press-escape='false'>
+
+      <span class="close-lxgs-common-user" @click='submitError("addRecord")'>关闭</span>
+      <h3>用户备注</h3>
+      <el-form label-width='120px' ref="addRemark" :model='remarkData' class='clearfix'>
+          <el-col :span="8">
+             <el-form-item label='常用称呼：' prop='nickname'>
+                 <el-input v-model="remarkData.nickname" placeholder="请填写常用称呼"></el-input>
+             </el-form-item>
+          </el-col>
+
+          <el-col :span="8">
+             <el-form-item label='性别：' prop='sex' :required='true'>
+                 <el-radio v-model="remarkData.sex" :label="1">男</el-radio>
+                 <el-radio v-model="remarkData.sex" :label="2">女</el-radio>
+             </el-form-item>
+          </el-col>
+
+          <el-col :span="8">
+             <el-form-item label='年龄：'  :rules='commentage' :required='true'>
+                 <el-input v-model.number="remarkData.age" placeholder="请填写年龄" type='number' :maxlength="3"></el-input>
+             </el-form-item>
+          </el-col>
+ 
+          <el-col :span="16">
+              <el-form-item label='求职意向：' prop='expectPosition' :required='true'>
+                  <el-radio v-model="remarkData.expectPosition" label="工厂普工">工厂普工</el-radio>
+                  <el-radio v-model="remarkData.expectPosition" label="服务人员">服务人员</el-radio>
+                  <el-radio v-model="remarkData.expectPosition" label="司机家政">司机家政</el-radio>
+                  <el-radio v-model="remarkData.expectPosition" label="不限">不限</el-radio>
+              </el-form-item>
+          </el-col>
+ 
+          <el-col :span="8">
+              <el-form-item label='微信：' prop='wechat'>
+                    <el-input v-model="remarkData.wechat" placeholder="请填写微信号" style="width: 120px;"></el-input>
+                    <el-checkbox v-model="remarkData.wechatSameAsPhone" @change="syncWechat">同手机号</el-checkbox>
+              </el-form-item>
+          </el-col>
+ 
+          <el-col :span="16">
+              <el-form-item label='期望入职时间：' prop='expectOnboardingDate' :required='true'>
+                  <el-radio v-model="remarkData.expectOnboardingDate" label="THREE">3天到岗</el-radio>
+                  <el-radio v-model="remarkData.expectOnboardingDate" label="WEEK">1周到岗</el-radio>
+                  <el-radio v-model="remarkData.expectOnboardingDate" label="TWO_WEEK">2周到岗</el-radio>
+                  <el-radio v-model="remarkData.expectOnboardingDate" label="MONTH">1月到岗</el-radio>
+                  <el-radio v-model="remarkData.expectOnboardingDate" label="NO_WORK">不找工作/随便看看</el-radio>
+              </el-form-item>
+          </el-col>
+             
+          <el-col :span="8">
+              <el-form-item label='出门多久：' prop='goOut'>
+                  <el-input v-model="remarkData.goOut" placeholder="请填写"></el-input>
+              </el-form-item>
+          </el-col>
+
+          <el-col :span="16">
+              <el-form-item label='学历：' prop='education'>
+                  <el-radio v-model="remarkData.education" label="小学及以下">小学及以下</el-radio>
+                  <el-radio v-model="remarkData.education" label="初中">初中</el-radio>
+                  <el-radio v-model="remarkData.education" label="高中/中专/技校">高中/中专/技校</el-radio>
+                  <el-radio v-model="remarkData.education" label="不限">不限</el-radio>
+              </el-form-item>
+          </el-col>
+ 
+          <el-col :span="8">
+              <el-form-item label='找工作多久：' prop='findJob'>
+                  <el-input v-model="remarkData.findJob" placeholder="请填写"></el-input>
+              </el-form-item>
+          </el-col>
+
+          <el-col :span="16">
+            <el-form-item label='当前月薪：' prop='currentSalary'>
+                <el-radio v-model="remarkData.currentSalary" label="3000-4000">3000-4000</el-radio>
+                <el-radio v-model="remarkData.currentSalary" label="4000-5000">4000-5000</el-radio>
+                <el-radio v-model="remarkData.currentSalary" label="5000-6000">5000-6000</el-radio>
+                <el-radio v-model="remarkData.currentSalary" label="6000以上">6000以上</el-radio>
+            </el-form-item>
+          </el-col>
+ 
+          <el-col :span="8">
+            <el-form-item label='痛点：' prop='painPoints'>
+                <el-input v-model="remarkData.painPoints" placeholder="请填写"></el-input>
+            </el-form-item>
+          </el-col>
+
+          <el-col :span="16">
+              <el-form-item label='特殊标记：' prop='tags'>
+                 <el-checkbox-group v-model="remarkData.tags">
+                     <el-checkbox v-for="(i, index) in customerTags" :key='index' :label="i.value" style='margin-right: 10px;'>{{i.key}}</el-checkbox>
+                 </el-checkbox-group>
+              </el-form-item>
+          </el-col>
+ 
+          <el-col :span="8">
+              <el-form-item label='在离职状态：' prop='onboarding'>
+                  <el-radio v-model="remarkData.onboarding" :label="1">在职</el-radio>
+                  <el-radio v-model="remarkData.onboarding" :label="2">离职</el-radio>
+              </el-form-item>
+          </el-col>
+ 
+          <el-col :span="16">
+              <el-form-item label='婚姻状况：' prop='maritalEnum'>
+                  <el-radio v-model="remarkData.maritalEnum" label='MARRIED'>已婚</el-radio>
+                  <el-radio v-model="remarkData.maritalEnum" label='UNMARRIED'>未婚</el-radio>
+                  <el-radio v-model="remarkData.maritalEnum" label='GOT_ENGAGED'>订婚</el-radio>
+                  <el-radio v-model="remarkData.maritalEnum" label='HAVING_BG_FRIEND'>有对象</el-radio>
+              </el-form-item>
+          </el-col>
+ 
+          <el-col :span="8">
+              <el-form-item label='技能：' prop='skillTag'>
+                  <el-radio v-model="remarkData.skillTag" :label="101">普工</el-radio>
+                  <el-radio v-model="remarkData.skillTag" :label="102">技术工</el-radio>
+              </el-form-item>
+          </el-col>
+
+          <el-col :span="24">
+              <el-form-item label='抱团/单人：' prop='peoples'>
+                  <el-radio v-model="remarkData.peoples" label="1人">1人</el-radio>
+                  <el-radio v-model="remarkData.peoples" label="2人">2人</el-radio>
+                  <el-radio v-model="remarkData.peoples" label="3人">3人</el-radio>
+                  <el-radio v-model="remarkData.peoples" label="多人">多人</el-radio>
+                  <el-input v-model="remarkData.peoples" placeholder="请填写" style="width:100px"></el-input>
+              </el-form-item>
+          </el-col>
+
+          <el-col :span="8">
+              <el-form-item label='期望工作地：' prop='expectCity'  :rules='commentcity'>
+                  <el-select v-model="remarkData.expectCity" placeholder="请选择期望工作地">
+                  <el-option v-for="(i, index) in locationofexpectationList" :key="index" :label="i.name" :value="i.id"></el-option>
+                  </el-select>
+              </el-form-item>
+          </el-col>
+ 
+          <el-col :span="8">
+              <el-form-item label='当前所在地：' prop='Currentlocationval'>
+                 <el-cascader
+                     :options="currentlocation"
+                     @change="selectChangeCurrent"
+                     v-model="cityData"
+                     change-on-select>
+                 </el-cascader>
+              </el-form-item>
+          </el-col>
+
+          <el-col :span="8">
+              <el-form-item label='籍贯老家：' prop='nativehome'>
+                  <el-cascader
+                  :options="currentlocation"
+                  @change="selectChangeCurrentHome"
+                  v-model="nativeData"
+                  change-on-select>
+                  </el-cascader>
+              </el-form-item>
+          </el-col>
+      </el-form>
+ 
+      <h3>添加注记</h3>
+      <el-form label-width='100px' ref="addRecord" :model='recordData'>
+        
+        <el-form-item label="是否接通：" prop='connectStatus' :rules="[{required: true, message: '请选择是否接通', trigger: 'blur'}]"> 
+          <el-radio v-for='(i, index) in quickRecordList' v-model="recordData.connectStatus" :label='i.value' :key='index'>{{i.lable}}</el-radio>
+        </el-form-item>
+        <el-form-item label='注记内容：' prop='comment' :required='true' :rules="[{required: true, message: '请输入注记内容', trigger: 'blur'}]">
+          <el-input type="textarea" :rows="2" placeholder="请输入注记内容" v-model="recordData.comment"></el-input>
+        </el-form-item>
+ 
+        <el-form-item>
+          <div class="popup-action" style="float:right">
+            <el-button :loading="recordLoading" @click='submitError("addRecord")'>取 消</el-button>
+            <el-button :loading="recordLoading" type="primary" @click='submitRecord("addRecord")'>确 定</el-button>
+          </div>
+        </el-form-item>
+      </el-form>
+ 
+      <el-table
+       :data="remarkList.items"
+       style="width: 100%">
+       <el-table-column
+       label="日期"
+       width="180">
+       <template slot-scope="scope">
+           <span type="primary">{{scope.row.updateTime | dateFormat01}}</span>
+       </template>
+       </el-table-column>
+       <el-table-column
+       prop="operatorName"
+       label="操作人"
+       width="180">
+       </el-table-column>
+       <el-table-column
+       prop="connected"
+       label="是否接通"
+       width="180">
+       </el-table-column>
+       <el-table-column
+       label="沟通方式">
+       <template slot-scope="scope">
+         <span>电话</span>
+       </template>
+       </el-table-column>
+       <el-table-column
+       prop="comment"
+       label="注记内容">
+       </el-table-column>
+       </el-table>
+  </el-dialog>
+ 
+</div>

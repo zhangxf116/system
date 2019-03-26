@@ -1,0 +1,50 @@
+<div class="lxgs-region">
+	<!-- 标题头 -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+
+	<!-- 数据列表 -->
+	<div class="lxgs-main-list" style="margin-top: -1px;">
+		<el-table v-loading.body='loading' :data='list' stripe :virtual-scrollbar='true'>
+			<el-table-column type="index" width="50" label="序号"></el-table-column>
+	        <el-table-column prop='regionName' label="工作区域" width='110'></el-table-column>
+
+	        <el-table-column label="小职姐">
+	       		<template slot-scope='scope'>
+	       			<span class="agents" v-for="i in scope.row.agents">{{i.nickname}}</span>
+	       		</template>
+	       	</el-table-column>
+
+	       	<el-table-column label="最新修改时间" width='110'><template slot-scope='scope'>{{scope.row.lastModifyTime | dateFormat02}}</template></el-table-column>
+
+	       	<el-table-column label="操作人" width='110'><template slot-scope='scope'>{{scope.row.operatorName}}</template></el-table-column>
+	       	
+	       	<el-table-column label="操作" width='110'>
+	       		<template slot-scope='scope'>
+	       			<el-button type="primary" size='mini' @click="edit(scope.row.regionValue, scope.row.agents)" v-track="{type: 'btn', metric: 'click', id: 'work-region:edit'}">编辑</el-button>
+	       		</template>
+	       	</el-table-column>
+		</el-table>
+	</div>
+
+	<!-- 弹出框：编辑 -->
+	<el-dialog title="请选择在此区域工作的小职姐" :visible.sync="isShowEdit" width="65%" @close='colseEdit("editForm")'>
+		<el-form ref="editForm" :model="editParams" :rules='editParamsRules' @submit.native.prevent>
+			<el-form-item prop='searchKey'>
+				<el-input v-model.trim="editParams.searchKey" placeholder="请输入小职姐昵称过滤" prefix-icon="el-icon-search" clearable @change='searchEngine' style="width: 180px;"></el-input>
+				<em class="lxgs-blue" style="font-size: 12px;">支持拼音搜索，回车确认，<i class="el-icon-error"></i>清除</em>
+			</el-form-item>
+
+			<el-form-item prop='agentIds'>
+				<el-checkbox-group v-model="editParams.agentIds">
+					<el-checkbox v-for='(i, index) in searchEngineList' :key="index" :label="i.agentId" size="mini">{{i.nickname}}</el-checkbox>
+				</el-checkbox-group>
+				<span v-if="searchEngineList.length === 0">无过滤结果..</span>
+			</el-form-item>
+		</el-form>
+
+		<span slot="footer" class="dialog-footer">
+			<el-button @click="isShowEdit = false">取 消</el-button>
+			<el-button type="primary" @click="submitEdit('editForm')" v-track="{type: 'btn', metric: 'click', id: 'work-region:edit:submit'}">确 定</el-button>
+		</span>
+	</el-dialog>
+</div>

@@ -1,0 +1,77 @@
+<div class="lxgs-info">
+	<!-- 标题头 | 上下线记录 -->
+	<h2 class="lxgs-main-title">{{$route.meta.pageTitle}}</h2>
+	<div class="lxgs-main-content">
+		<ul>
+			<li>
+				<span class="key">用户名：</span>
+				<span class="value">{{info.agentId}}</span>
+
+				<div class="portrait">
+					<img width="100%" v-for='i in info.headImages' v-if='i.selected' :src="i.url">
+				</div>
+			</li>
+
+
+			<li>
+				<span class="key">昵称：</span>
+				<span class="value">{{info.nick}}</span>
+			</li>
+
+			<li>
+				<span class="key">姓名：</span>
+				<span class="value">{{info.name}}</span>
+			</li>
+
+			<li>
+				<span class="key">性别：</span>
+				<span class="value">{{info.sex | sexMap}}</span>
+			</li>
+
+			<li>
+				<span class="key">家乡：</span>
+				<span class="value">{{info.jiguan}}</span>
+			</li>
+
+			<li>
+				<span class="key">身份证号：</span>
+				<span class="value">{{info.addStarCardNo}}</span>
+			</li>
+
+			<li>
+				<span class="key">年龄：</span>
+				<span class="value">{{info.age}}</span>
+			</li>
+
+			<li>
+				<span class="key">生日：</span>
+				<span class="value">{{info.formattedBirthday}}</span>
+			</li>
+
+			<li>
+				<span class="key">星座：</span>
+				<span class="value">{{info.constellation}}</span>
+			</li>
+
+			<li>
+				<span class="key">联系电话：</span>
+				<span class="value">{{info.phone}}</span>
+			</li>
+
+			<li>
+				<span class="key">微信号：</span>
+				<span class="value">{{info.wechat}}</span>
+			</li>
+
+			<li>
+				<span class="key">微信二维码：</span>
+				<span class="value"><img class="img" :src="info.wxQrCodeUrl"></span>
+			</li>
+
+		</ul>
+
+		<div class="edit" v-if="$route.query.agentId">
+			<el-button type='primary' @click="skip" v-track="{type: 'btn', metric: 'click', id: 'agent-info:edit'}">编辑</el-button>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,241 @@
+body {
+	font-weight: 400;
+    font-size: 14px;
+	font-family: Helvetica Neue,Helvetica,PingFang SC,Hiragino Sans GB,Microsoft YaHei, Noto Sans, Noto Sans CJK SC, SimSun, sans-serif;
+	color: @body-color;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+	-webkit-appearance: none !important;
+}
+input[type="number"]{
+	-moz-appearance: textfield;
+}
+
+html, body,
+.lxgs-wrapper,
+.lxgs-container,
+.lxgs-menubar {
+	height: 100%;
+}
+.lxgs-wrapper {
+	background-color: @wrapper-color;
+}
+.lxgs-header {
+	background-color: @header-color;
+
+	.lxgs-logo {
+		display: inline-block;
+		height: 30px;
+		margin: 5px 0;
+		padding-left: 50px;
+		line-height: 30px;
+		font-size: 18px;
+		color: @white;
+		background: url(./image/logo.svg) no-repeat;
+		background-size: 30px 30px;
+	}
+
+	.lxgs-info {
+		display: inline-block;
+		float: right;
+		margin: 0;
+		height: 100%;
+		li {
+			position: relative;
+			display: inline-block;
+			vertical-align: middle;
+			margin-left: 20px;
+			line-height: 40px;
+			color: @white;
+			cursor: pointer;
+
+			.region:after {
+				content: '、';
+			}
+			.region:last-child:after {
+				content: '';
+			}
+
+			.default-way {
+				display: inline-block;
+				width: 80px;
+			}
+			.select-way {
+				position: absolute;
+				top: 0;
+				left: 0;
+				background: @header-color; 
+			}
+		}
+		li:first-child {
+			margin-left: 0px;
+			cursor: default;
+		}
+	}
+}
+
+.lxgs-menubar {
+	.el-menu-item {
+		/*padding-left: 40px !important;*/
+
+		i {
+			/*margin-right: 15px;*/
+			color: @light-gray;
+		}
+
+		&.is-active { 
+			background-color: @green !important;
+
+			i {  color: @white; }
+		}
+	}
+	.el-submenu {
+		/*padding-left: 40px !important;*/
+
+		i {
+			/*margin-right: 15px;*/
+			color: @light-gray;
+		}
+
+		&.is-active { 
+			i {  color: @white; }
+		}
+	}
+}
+
+/** 内容区域：标题 **/
+.lxgs-main-title {
+	margin: 0;
+	border: 1px solid @border-color;
+    padding: 10px 15px;
+    background-color: @white;
+    font-size: inherit;
+	font-weight: normal;
+}
+.lxgs-main-search {
+	position: relative;
+	margin-top: -1px;
+    padding: 10px 15px;
+	border: 1px solid @border-color;
+    background-color: @white;
+}
+.lxgs-main-content {
+	position: relative;
+	margin-top: -1px;
+	padding: 10px 15px;
+	border: 1px solid @border-color;
+	background-color: @white;
+}
+
+/** 数据列表 **/
+.lxgs-main-list {
+	margin-top: 15px;
+	border: 1px solid @border-color;
+	background-color: @white;
+}
+
+/** 分页 **/
+.lxgs-main-pagination {
+	padding: 10px 15px;
+    text-align: right;
+}
+
+/** Tab **/
+.lxgs-main-tab-wrapper {
+	margin-top: 20px;
+	border: 1px solid @border-color;
+	background-color: @white;
+
+	.lxgs-main-tab-search {
+		padding: 0 15px;
+	}
+	.no-return-fee {
+		position: relative;
+	}
+	.no-return-fee:before {
+		position: absolute;
+		content: "";
+		left: 0;
+		top: 0;
+		border: 12px solid @deep-orange;
+		border-right-color: transparent;
+		border-bottom-color: transparent;
+	};
+	.assure {
+		text-decoration: underline;
+	}
+	.el-tabs__nav {
+		margin-left: 20px;
+	}
+	.el-tabs__header {
+		background-color: @light-orange;
+	}
+}
+
+/** 图片上传 **/
+.lxgs-upload-wrapper {
+	margin: 0;
+	padding: 0;
+
+	li {
+		float: left;
+		position: relative;
+		width: 80px;
+		height: 80px;
+		margin-right: 10px;
+		margin-bottom: 10px;
+		box-sizing: border-box;
+		list-style: none;
+
+		.image {
+			position: relative;
+			padding-bottom: 100%;
+			height: 0;
+			overflow: hidden;
+			background-color: @gray;
+			border-radius: 50%;
+			box-shadow: 1px 2px 1px #a29e9e;
+
+			img {
+				display: block;
+				max-width: 100%;
+			}
+		}
+
+		&.selected:after {
+			content: "";
+			position: absolute;
+			width: 25px;
+			height: 25px;
+			right: 0;
+			top: 0;
+			border-radius: 25px;
+			background: url("./image/checked@2x.png") no-repeat center center @green;
+		}
+	}
+
+	.lxgs-upload {
+		line-height: 80px;
+		border: 1px dashed @gray;
+		border-radius: 6px;
+		overflow: hidden;
+		text-align: center;
+		font-size: 22px;
+		color: #ddd;
+
+		&:hover {
+			border-color: @blue;
+		}
+
+		input {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			opacity: 0;
+		}
+	}
+}

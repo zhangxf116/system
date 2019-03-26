@@ -1,0 +1,81 @@
+<div class="lxgs-tab-content">
+	<!-- 奖励记录列表 -->
+	<el-table
+		v-loading.body='loading'
+		element-loading-background="rgba(0, 0, 0, 0.6)"
+		:data='returnFeeRecord.items'
+	    stripe
+	    :virtual-scrollbar='true'>
+
+		<el-table-column
+            label='序号'
+            align='center'
+            width="65">
+            <template slot-scope="scope">
+				{{(scope.$index + 1) + (returnFeeRecord.pageNo -1) * returnFeeRecord.pageSize}}
+			</template>
+        </el-table-column>
+
+        <el-table-column prop='positionName' label="岗位名称"></el-table-column>
+
+        <el-table-column label="岗位特性" width="90">
+			<template slot-scope="scope">
+				<span v-for="i in scope.row.positionTypes">{{i}} </span>
+			</template>
+		</el-table-column>
+
+		<el-table-column prop='stage' width='60' label="阶段"></el-table-column>
+
+		<el-table-column prop='condition' width='120' label="奖励规则"></el-table-column>
+
+        <el-table-column
+			label="奖励金额"
+			width='100'
+			prop="amount"></el-table-column>
+
+		<el-table-column
+			label="奖励预计到账时间"
+			width="140">
+				<template slot-scope="scope">
+	                <span v-if="scope.row.expectedReturnTime">{{scope.row.expectedReturnTime | dateFormat01}}</span>
+	            </template>
+			</el-table-column>
+
+		<el-table-column label="快返保" width="130">
+			<template slot-scope="scope">
+				<template v-if="scope.row.assureStatus === 0">
+	                <el-popover placement="bottom" width="200" trigger="hover">
+	                	<span slot="reference" class="assure">{{scope.row.assureStatus | assureStatusMap}}</span>
+	        			<p>原因: {{scope.row.assureFailureReason}}</p>
+	        		</el-popover>
+				</template>
+
+				<template v-else>{{scope.row.assureStatus | assureStatusMap}}</template>
+            </template>
+		</el-table-column>
+
+		<el-table-column label="奖励状态" width="120">
+			<template slot-scope="scope">
+                {{scope.row.status | returnFeeStatusMap}}
+            </template>
+		</el-table-column>
+
+		<el-table-column label="奖励单" width="80">
+			<template slot-scope="scope">
+				<a :href='scope.row.returnFeeImageUrl' target='_blank' v-if='scope.row.returnFeeImageUrl' v-track="{type: 'btn', metric: 'click', id: 'customer-detail:return-fee:view'}">查看</a>
+            </template>
+		</el-table-column>
+	</el-table>
+
+	<!-- 奖励记录列表分页 -->
+	<div class='lxgs-main-pagination'>
+		<el-pagination
+			@size-change="handlePageChange($event, 'returnFeeData', 'page_size', 'getReturnFeeList')"
+		  	@current-change="handlePageChange($event, 'returnFeeData', 'page_no', 'getReturnFeeList')"
+	  		:current-page='returnFeeRecord.pageNo'
+			:page-sizes="pageSizes"
+			:page-size='returnFeeRecord.pageSize'
+			layout="total, sizes, prev, pager, next, jumper"
+			:total='returnFeeRecord.totalCount'></el-pagination>
+	</div>
+</div>
